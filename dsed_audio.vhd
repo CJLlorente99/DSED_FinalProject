@@ -34,60 +34,63 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity dsed_audio is
-    Port ( clk_100Mhz : in STD_LOGIC;
-           reset : in STD_LOGIC;
-           -- Control ports
-           BTNL : in STD_LOGIC; -- Record
-           BTNC : in STD_LOGIC; -- Reset ram
-           BTNR : in STD_LOGIC; -- Sound on
-           SW0 : in STD_LOGIC; -- SW0 = '0' => (play forward or LPF), SW1= '1' => (play reverse or HPF)
-           SW1 : in STD_LOGIC; -- SW1 = '0' => (play_reverse or play_forward), SW = '1' => filter (HPF or LPF)
-           -- To/From the microphone
-           micro_clk : out STD_LOGIC;
-           micro_data : in STD_LOGIC;
-           micro_LR : out STD_LOGIC;
-           -- To/From the mini_jack
-           jack_sd : out STD_LOGIC;
-           jack_pwm : out STD_LOGIC;
-           LED : out STD_LOGIC_VECTOR(7 downto 0)
-           );
+    Port (
+         clk_100Mhz : in STD_LOGIC;
+         reset : in STD_LOGIC;
+         -- Control ports
+         BTNL : in STD_LOGIC; -- Record
+         BTNC : in STD_LOGIC; -- Reset ram
+         BTNR : in STD_LOGIC; -- Sound on
+         SW0 : in STD_LOGIC; -- SW0 = '0' => (play forward or LPF), SW1= '1' => (play reverse or HPF)
+         SW1 : in STD_LOGIC; -- SW1 = '0' => (play_reverse or play_forward), SW = '1' => filter (HPF or LPF)
+         -- To/From the microphone
+         micro_clk : out STD_LOGIC;
+         micro_data : in STD_LOGIC;
+         micro_LR : out STD_LOGIC;
+         -- To/From the mini_jack
+         jack_sd : out STD_LOGIC;
+         jack_pwm : out STD_LOGIC;
+         LED : out STD_LOGIC_VECTOR(7 downto 0)
+    );
 end dsed_audio;
 
 architecture Behavioral of dsed_audio is
     -- Component declaration
         -- Input/Output component declaration    
         component audio_interface is
-            Port ( clk_12megas : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   -- Recording ports
-                   -- To/From the controller
-                   record_enable : in STD_LOGIC;
-                   sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                   sample_out_ready : out STD_LOGIC;
-                   -- To/From the microphone
-                   micro_clk : out STD_LOGIC;
-                   micro_data : in STD_LOGIC;
-                   micro_LR : out STD_LOGIC;
-                   -- Playing ports
-                   -- To/From the controller
-                   play_enable : in STD_LOGIC;
-                   sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                   sample_request : out STD_LOGIC;
-                   -- To/From the mini-jack
-                   jack_sd : out STD_LOGIC;
-                   jack_pwm : out STD_LOGIC;
-                   --LED ports
-                   --To/From PowerDisplay
-                   LED : out STD_LOGIC_VECTOR (7 downto 0)
-                   );
+            Port (
+                clk_12megas : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                -- Recording ports
+                -- To/From the controller
+                record_enable : in STD_LOGIC;
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_out_ready : out STD_LOGIC;
+                -- To/From the microphone
+                micro_clk : out STD_LOGIC;
+                micro_data : in STD_LOGIC;
+                micro_LR : out STD_LOGIC;
+                -- Playing ports
+                -- To/From the controller
+                play_enable : in STD_LOGIC;
+                sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_request : out STD_LOGIC;
+                -- To/From the mini-jack
+                jack_sd : out STD_LOGIC;
+                jack_pwm : out STD_LOGIC;
+                --LED ports
+                --To/From PowerDisplay
+                LED : out STD_LOGIC_VECTOR (7 downto 0)
+            );
         end component;
         
         -- clock wizard component declaration
         component clk_wiz_12mhz is
-            Port ( clk_100Mhz : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   clk_12Mhz : out STD_LOGIC
-                   );
+            Port (
+                clk_100Mhz : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                clk_12Mhz : out STD_LOGIC
+            );
         end component;
         
         -- RAM wizard component declaration
@@ -104,14 +107,15 @@ architecture Behavioral of dsed_audio is
         
         -- FIR filter declaration
         component fir_filter is
-            Port ( clk : in STD_LOGIC;
+            Port (
+                clk : in STD_LOGIC;
                 reset : in STD_LOGIC;
                 sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
                 sample_in_enable : in STD_LOGIC;
                 filter_select : in STD_LOGIC;
                 sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
                 sample_out_ready : out STD_LOGIC
-                );
+            );
         end component;
     
     --FSM state type declaration

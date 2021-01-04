@@ -26,69 +26,74 @@ use work.package_dsed.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity audio_interface is
-    Port ( clk_12megas : in STD_LOGIC; -- System clock
-           reset : in STD_LOGIC; -- Asynchronous logic
-           -- Recording ports
-           -- To/From the controller
-           record_enable : in STD_LOGIC; -- When activated, micro_data is sampled
-           sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0); -- Sampled micro data
-           sample_out_ready : out STD_LOGIC; -- Indicator that sample_out is currently valid
-           -- To/From the microphone
-           micro_clk : out STD_LOGIC; -- Clk sent to the microphone
-           micro_data : in STD_LOGIC; -- Data coming from microphone
-           micro_LR : out STD_LOGIC; -- Left/Right channel
-           -- Playing ports
-           -- To/From the controller
-           play_enable : in STD_LOGIC; -- When activated, data in sample_in is played
-           sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0); -- Data to be reproduced
-           sample_request : out STD_LOGIC; -- Indicator that asks for the next sample to be reproduced
-           -- To/From the mini-jack
-           jack_sd : out STD_LOGIC; -- Mono audio stage control information
-           jack_pwm : out STD_LOGIC; -- PWM signal that is to be reproduced
-           --LED ports
-           --To/From PowerDisplay
-           LED : out STD_LOGIC_VECTOR (7 downto 0) -- Data showing current signal power
-           );
+    Port (
+        clk_12megas : in STD_LOGIC; -- System clock
+        reset : in STD_LOGIC; -- Asynchronous logic
+        -- Recording ports
+        -- To/From the controller
+        record_enable : in STD_LOGIC; -- When activated, micro_data is sampled
+        sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0); -- Sampled micro data
+        sample_out_ready : out STD_LOGIC; -- Indicator that sample_out is currently valid
+        -- To/From the microphone
+        micro_clk : out STD_LOGIC; -- Clk sent to the microphone
+        micro_data : in STD_LOGIC; -- Data coming from microphone
+        micro_LR : out STD_LOGIC; -- Left/Right channel
+        -- Playing ports
+        -- To/From the controller
+        play_enable : in STD_LOGIC; -- When activated, data in sample_in is played
+        sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0); -- Data to be reproduced
+        sample_request : out STD_LOGIC; -- Indicator that asks for the next sample to be reproduced
+        -- To/From the mini-jack
+        jack_sd : out STD_LOGIC; -- Mono audio stage control information
+        jack_pwm : out STD_LOGIC; -- PWM signal that is to be reproduced
+        --LED ports
+        --To/From PowerDisplay
+        LED : out STD_LOGIC_VECTOR (7 downto 0) -- Data showing current signal power
+    );
 end audio_interface;
 
 architecture Behavioral of audio_interface is
     -- Component declaration
         component pwm is
-            Port ( clk_12megas : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   en_2_cycles : in STD_LOGIC;
-                   sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
-                   sample_request : out STD_LOGIC;
-                   pwm_pulse : out STD_LOGIC
-                   );
+            Port (
+                clk_12megas : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                en_2_cycles : in STD_LOGIC;
+                sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                sample_request : out STD_LOGIC;
+                pwm_pulse : out STD_LOGIC
+            );
         end component;
         
         component FSMD_microphone is
-            Port ( clk_12megas : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   enable_4_cycles : in STD_LOGIC;
-                   micro_data : in STD_LOGIC;
-                   sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                   sample_out_ready : out STD_LOGIC
-                   );
+            Port (
+                clk_12megas : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                enable_4_cycles : in STD_LOGIC;
+                micro_data : in STD_LOGIC;
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_out_ready : out STD_LOGIC
+            );
         end component;
         
         component enable_generator is
-            Port ( clk_12megas : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   clk_3megas : out STD_LOGIC;
-                   en_2_cycles : out STD_LOGIC;
-                   en_4_cycles : out STD_LOGIC
-                   );
+            Port (
+                clk_12megas : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                clk_3megas : out STD_LOGIC;
+                en_2_cycles : out STD_LOGIC;
+                en_4_cycles : out STD_LOGIC
+            );
         end component;
         
         component average_power_display is
-            Port ( clk_12megas : in STD_LOGIC;
-                   reset : in STD_LOGIC;
-                   sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
-                   sample_request : in STD_LOGIC;
-                   LED : out STD_LOGIC_VECTOR (7 downto 0)
-                   );
+            Port (
+                clk_12megas : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                sample_request : in STD_LOGIC;
+                LED : out STD_LOGIC_VECTOR (7 downto 0)
+            );
         end component; 
     
     -- pwm signals:
