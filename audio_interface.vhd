@@ -47,45 +47,49 @@ entity audio_interface is
            jack_pwm : out STD_LOGIC; -- PWM signal that is to be reproduced
            --LED ports
            --To/From PowerDisplay
-           LED : out STD_LOGIC_VECTOR (7 downto 0)); -- Data showing current signal power
+           LED : out STD_LOGIC_VECTOR (7 downto 0) -- Data showing current signal power
+           );
 end audio_interface;
 
 architecture Behavioral of audio_interface is
     -- Component instantiation
-    component pwm is
-        Port ( clk_12megas : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               en_2_cycles : in STD_LOGIC;
-               sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
-               sample_request : out STD_LOGIC;
-               pwm_pulse : out STD_LOGIC);
-    end component;
-    
-    component FSMD_microphone is
-        Port ( clk_12megas : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               enable_4_cycles : in STD_LOGIC;
-               micro_data : in STD_LOGIC;
-               sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-               sample_out_ready : out STD_LOGIC
-               );
-    end component;
-    
-    component enable_generator is
-        Port ( clk_12megas : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               clk_3megas : out STD_LOGIC;
-               en_2_cycles : out STD_LOGIC;
-               en_4_cycles : out STD_LOGIC);
-    end component;
-    
-    component average_power_display is
-        Port ( clk_12megas : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
-               sample_request : in STD_LOGIC;
-               LED : out STD_LOGIC_VECTOR (7 downto 0));
-    end component; 
+        component pwm is
+            Port ( clk_12megas : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   en_2_cycles : in STD_LOGIC;
+                   sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                   sample_request : out STD_LOGIC;
+                   pwm_pulse : out STD_LOGIC
+                   );
+        end component;
+        
+        component FSMD_microphone is
+            Port ( clk_12megas : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   enable_4_cycles : in STD_LOGIC;
+                   micro_data : in STD_LOGIC;
+                   sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                   sample_out_ready : out STD_LOGIC
+                   );
+        end component;
+        
+        component enable_generator is
+            Port ( clk_12megas : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   clk_3megas : out STD_LOGIC;
+                   en_2_cycles : out STD_LOGIC;
+                   en_4_cycles : out STD_LOGIC
+                   );
+        end component;
+        
+        component average_power_display is
+            Port ( clk_12megas : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                   sample_request : in STD_LOGIC;
+                   LED : out STD_LOGIC_VECTOR (7 downto 0)
+                   );
+        end component; 
     
     -- pwm signals:
         signal en_2_cycles,pwm_pulse : STD_LOGIC;
@@ -105,50 +109,51 @@ architecture Behavioral of audio_interface is
 begin
 
     -- Some signals have a constant value
-    jack_sd <= '1';
-    micro_LR <= '1';
+        jack_sd <= '1';
+        micro_LR <= '1';
     
     -- Signal assignation in order to record only when record_enable is activated
-    auxiliar_enable <= (enable_4_cycles and record_enable);
+        auxiliar_enable <= (enable_4_cycles and record_enable);
     
     -- sample_request is used in variuos components. Thus, this assignation is necessary
-    sample_request <= s_request;
+        sample_request <= s_request;
     
     -- Signal assignation in order to play actual PWM data when play_enable is activated. If play_enable is deactivated, jack_pwm is set to all 0's
-    jack_pwm <= play_enable and jack_pwm_auxiliar;
+        jack_pwm <= play_enable and jack_pwm_auxiliar;
 
-    -- Component definition
-    PWM_CONVERTER : pwm port map(
-        clk_12megas => clk_12megas,
-        reset => reset,
-        en_2_cycles => en_2_cycles,
-        sample_in => sample_in,
-        sample_request => s_request,
-        pwm_pulse => jack_pwm_auxiliar
-    );
-    
-    MICRO_SAMPLER : FSMD_microphone port map(
-        clk_12megas => clk_12megas,
-        reset => reset,
-        enable_4_cycles => auxiliar_enable,
-        micro_data => micro_data,
-        sample_out => sample_out,
-        sample_out_ready => sample_out_ready
-    );
-    
-    EN_GENERATOR : enable_generator port map(
-        clk_12megas => clk_12megas,
-        reset => reset,
-        clk_3megas => micro_clk,
-        en_2_cycles => en_2_cycles,
-        en_4_cycles => enable_4_cycles
-    );
-    
-    POWER_LEDS : average_power_display port map(
-        clk_12megas => clk_12megas,
-       reset => reset,
-       sample_in => sample_in,
-       sample_request => s_request,
-       LED => LED);
+    -- Component declaration
+        PWM_CONVERTER : pwm port map(
+            clk_12megas => clk_12megas,
+            reset => reset,
+            en_2_cycles => en_2_cycles,
+            sample_in => sample_in,
+            sample_request => s_request,
+            pwm_pulse => jack_pwm_auxiliar
+        );
+        
+        MICRO_SAMPLER : FSMD_microphone port map(
+            clk_12megas => clk_12megas,
+            reset => reset,
+            enable_4_cycles => auxiliar_enable,
+            micro_data => micro_data,
+            sample_out => sample_out,
+            sample_out_ready => sample_out_ready
+        );
+        
+        EN_GENERATOR : enable_generator port map(
+            clk_12megas => clk_12megas,
+            reset => reset,
+            clk_3megas => micro_clk,
+            en_2_cycles => en_2_cycles,
+            en_4_cycles => enable_4_cycles
+        );
+        
+        POWER_LEDS : average_power_display port map(
+            clk_12megas => clk_12megas,
+           reset => reset,
+           sample_in => sample_in,
+           sample_request => s_request,
+           LED => LED
+        );
 
 end Behavioral;

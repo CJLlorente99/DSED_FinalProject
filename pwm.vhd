@@ -32,43 +32,47 @@ entity pwm is
            en_2_cycles : in STD_LOGIC; -- Input signal in order to work at a 6MHz rate
            sample_in : in STD_LOGIC_VECTOR(sample_size - 1 downto 0); -- Sample to be translated to PWM
            sample_request : out STD_LOGIC; -- Indicator that shows when translation has been completed and new sample_in is to be taken
-           pwm_pulse : out STD_LOGIC); -- PWM data
+           pwm_pulse : out STD_LOGIC -- PWM data
+           );
 end pwm;
 
 architecture Behavioral of pwm is
     -- Signal declaration
-    signal next_count, count : unsigned(8 downto 0) := (others => '0');
-    signal togle : STD_LOGIC := '0';
-    signal sample, next_sample : STD_LOGIC_VECTOR(sample_size - 1 downto 0) := (others => '0');
+        -- Registers
+        signal next_count, count : unsigned(8 downto 0) := (others => '0');
+        signal sample, next_sample : STD_LOGIC_VECTOR(sample_size - 1 downto 0) := (others => '0');
+        
+        -- Auxiliar signals
+        signal togle : STD_LOGIC := '0';
 
 begin
 
     -- Register
-    process (clk_12megas, reset) 
-    begin
-        if reset = '1' then
-            count <= (others => '0');
-            togle <= '0';
-            sample <= (others => '0');
-        elsif rising_edge(clk_12megas) then
-        
-            togle <= '0';
-            sample <= next_sample;
-        
-            if en_2_cycles = '1' then
-                count <= next_count;
-                togle <= '1';
+        process (clk_12megas, reset) 
+        begin
+            if reset = '1' then
+                count <= (others => '0');
+                togle <= '0';
+                sample <= (others => '0');
+            elsif rising_edge(clk_12megas) then
+            
+                togle <= '0';
+                sample <= next_sample;
+            
+                if en_2_cycles = '1' then
+                    count <= next_count;
+                    togle <= '1';
+                end if;
             end if;
-        end if;
-    end process;
+        end process;
     
     -- Next state logic
-    next_count <= count + 1 when count < 299 else (others => '0');
-    next_sample <= sample_in when (count = 299) else
-                   sample;
+        next_count <= count + 1 when count < 299 else (others => '0');
+        next_sample <= sample_in when (count = 299) else
+                       sample;
     
     --Output logic
-    pwm_pulse <= '1' when (unsigned(sample) > count) else '0';
-    sample_request <= '1' when (count = 299) and (togle = '1') else '0';
+        pwm_pulse <= '1' when (unsigned(sample) > count) else '0';
+        sample_request <= '1' when (count = 299) and (togle = '1') else '0';
 
 end Behavioral;

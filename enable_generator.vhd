@@ -30,37 +30,39 @@ entity enable_generator is
            reset : in STD_LOGIC; -- Asynchronous reset
            clk_3megas : out STD_LOGIC;
            en_2_cycles : out STD_LOGIC;
-           en_4_cycles : out STD_LOGIC);
+           en_4_cycles : out STD_LOGIC
+           );
 end enable_generator;
 
 architecture Behavioral of enable_generator is
     -- Signal declaration
-    signal count, next_count : unsigned(2 downto 0);
+        -- Registers
+        signal count, next_count : unsigned(2 downto 0);
     
 begin
 
     -- Register
-    process (clk_12megas, reset)
-    begin
-        if reset = '1' then
-            count <= "000";
-        elsif rising_edge(clk_12megas) then
-            count <= next_count;
-        end if;
-    end process;
+        process (clk_12megas, reset)
+        begin
+            if reset = '1' then
+                count <= "000";
+            elsif rising_edge(clk_12megas) then
+                count <= next_count;
+            end if;
+        end process;
     
     -- Next-state logic
-    next_count <= count + 1 when count < 4 else
-                  "001";
+        next_count <= count + 1 when count < 4 else
+                      "001";
     
     -- Output logic
-    clk_3megas <= '1' when (count = 2 or count = 3) else
-                  '0';
-                  
-    en_2_cycles <= '1' when (count = 1 or count = 3) else
-                   '0';
-                   
-    en_4_cycles <= '1' when count = 2 else
-                   '0';
+        clk_3megas <= '1' when (count = 2 or count = 3) else
+                      '0';
+                      
+        en_2_cycles <= '1' when (count = 1 or count = 3) else
+                       '0';
+                       
+        en_4_cycles <= '1' when count = 2 else
+                       '0';
     
 end Behavioral;
