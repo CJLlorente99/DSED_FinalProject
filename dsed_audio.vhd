@@ -1,19 +1,20 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Grupo 9
+-- Engineer: CJLL & ITI
 -- 
 -- Create Date: 09.11.2020 10:48:09
 -- Design Name: 
 -- Module Name: dsed_audio - Behavioral
--- Project Name: 
+-- Project Name: Sistema de grabación, tratamiento y reproducción de audio
 -- Target Devices: 
 -- Tool Versions: 
--- Description: 
+-- Description: This module rules the behaviour of the complete system. Behaviout is implemented as a FSM
 -- 
 -- Dependencies: 
 -- 
 -- Revision:
 -- Revision 0.01 - File Created
+-- Revision 1.00 - File finished
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
@@ -39,8 +40,8 @@ entity dsed_audio is
            BTNL : in STD_LOGIC; -- Record
            BTNC : in STD_LOGIC; -- Reset ram
            BTNR : in STD_LOGIC; -- Sound on
-           SW0 : in STD_LOGIC; 
-           SW1 : in STD_LOGIC;
+           SW0 : in STD_LOGIC; -- SW0 = '0' => (play forward or LPF), SW1= '1' => (play reverse or HPF)
+           SW1 : in STD_LOGIC; -- SW1 = '0' => (play_reverse or play_forward), SW = '1' => filter (HPF or LPF)
            -- To/From the microphone
            micro_clk : out STD_LOGIC;
            micro_data : in STD_LOGIC;
@@ -48,85 +49,75 @@ entity dsed_audio is
            -- To/From the mini_jack
            jack_sd : out STD_LOGIC;
            jack_pwm : out STD_LOGIC;
-           LED : out STD_LOGIC_VECTOR(7 downto 0);
-           
-           -- Debugging signals
-           dina_a : out STD_LOGIC_VECTOR(7 downto 0);
-           wea_a : out STD_LOGIC_VECTOR(0 downto 0);
-           ena_a : out STD_LOGIC;
-           addra_a : out STD_LOGIC_VECTOR(18 downto 0);
-           douta_a : out STD_LOGIC_VECTOR(7 downto 0);
-           
-           rec_enable : out STD_LOGIC;
-           reco_ready : out STD_LOGIC; 
-           state_aux : out STD_LOGIC_VECTOR(2 downto 0);
-           
-           sample_request_aux : out std_logic
+           LED : out STD_LOGIC_VECTOR(7 downto 0)
            );
 end dsed_audio;
 
 architecture Behavioral of dsed_audio is
     -- Component declaration
-    -- Input/Output component declaration    
-    component audio_interface is
-        Port ( clk_12megas : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               -- Recording ports
-               -- To/From the controller
-               record_enable : in STD_LOGIC;
-               sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-               sample_out_ready : out STD_LOGIC;
-               -- To/From the microphone
-               micro_clk : out STD_LOGIC;
-               micro_data : in STD_LOGIC;
-               micro_LR : out STD_LOGIC;
-               -- Playing ports
-               -- To/From the controller
-               play_enable : in STD_LOGIC;
-               sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-               sample_request : out STD_LOGIC;
-               -- To/From the mini-jack
-               jack_sd : out STD_LOGIC;
-               jack_pwm : out STD_LOGIC;
-               --LED ports
-               --To/From PowerDisplay
-               LED : out STD_LOGIC_VECTOR (7 downto 0));
-    end component;
-    
-    -- clock wizard component declaration
-    component clk_wiz_12mhz is
-        Port ( clk_100Mhz : in STD_LOGIC;
-               reset : in STD_LOGIC;
-               clk_12Mhz : out STD_LOGIC);
-    end component;
-    
-    -- RAM wizard component declaration
-    component blk_mem_gen_0 IS
-        Port (
-            clka : IN STD_LOGIC;
-            ena : IN STD_LOGIC;
-            wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-            addra : IN STD_LOGIC_VECTOR(18 DOWNTO 0);
-            dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-            douta : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
-        );
-    end component; 
-    
-    -- FIR filter declaration
-    component fir_filter is
-        Port ( clk : in STD_LOGIC;
-            reset : in STD_LOGIC;
-            sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-            sample_in_enable : in STD_LOGIC;
-            filter_select : in STD_LOGIC;
-            sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-            sample_out_ready : out STD_LOGIC);
-    end component;
+        -- Input/Output component declaration    
+        component audio_interface is
+            Port ( clk_12megas : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   -- Recording ports
+                   -- To/From the controller
+                   record_enable : in STD_LOGIC;
+                   sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                   sample_out_ready : out STD_LOGIC;
+                   -- To/From the microphone
+                   micro_clk : out STD_LOGIC;
+                   micro_data : in STD_LOGIC;
+                   micro_LR : out STD_LOGIC;
+                   -- Playing ports
+                   -- To/From the controller
+                   play_enable : in STD_LOGIC;
+                   sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                   sample_request : out STD_LOGIC;
+                   -- To/From the mini-jack
+                   jack_sd : out STD_LOGIC;
+                   jack_pwm : out STD_LOGIC;
+                   --LED ports
+                   --To/From PowerDisplay
+                   LED : out STD_LOGIC_VECTOR (7 downto 0)
+                   );
+        end component;
+        
+        -- clock wizard component declaration
+        component clk_wiz_12mhz is
+            Port ( clk_100Mhz : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   clk_12Mhz : out STD_LOGIC
+                   );
+        end component;
+        
+        -- RAM wizard component declaration
+        component blk_mem_gen_0 IS
+            Port (
+                clka : IN STD_LOGIC;
+                ena : IN STD_LOGIC;
+                wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+                addra : IN STD_LOGIC_VECTOR(18 DOWNTO 0);
+                dina : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+                douta : OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+            );
+        end component; 
+        
+        -- FIR filter declaration
+        component fir_filter is
+            Port ( clk : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_in_enable : in STD_LOGIC;
+                filter_select : in STD_LOGIC;
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_out_ready : out STD_LOGIC
+                );
+        end component;
     
     --FSM state type declaration
     type state_type is (idle, filter1, filter2, record_sampling, record_save, reset_mem, play_forward, play_reverse);
     
-    -- signals declaration
+    -- Signals declaration
         -- Audio Interface
         signal clk_12Mhz, rec_ready, sample_request : STD_LOGIC;
         signal data_audio : STD_LOGIC_VECTOR (sample_size -1 downto 0);
@@ -160,7 +151,8 @@ begin
     CLK_WIZ : clk_wiz_12mhz
         port map ( clk_100Mhz => clk_100Mhz,
                    reset => reset,
-                   clk_12Mhz => clk_12Mhz);
+                   clk_12Mhz => clk_12Mhz
+               );
                    
     -- audio interface instantiation
     AUDIO_INTER : audio_interface
@@ -177,7 +169,8 @@ begin
                    sample_request => sample_request,
                    jack_sd => jack_sd,
                    jack_pwm => jack_pwm,
-                   LED => LED);
+                   LED => LED
+                );
     
     -- ram instantation
     RAM : blk_mem_gen_0 
@@ -186,7 +179,8 @@ begin
                    wea => wea,
                    addra => std_logic_vector(act_address),
                    dina => data_audio,
-                   douta => data_ram);
+                   douta => data_ram
+               );
     
     -- filter instantation
     FILTER : fir_filter 
@@ -196,387 +190,341 @@ begin
                    sample_in_enable => filter_in_enable,
                    filter_select => filter_select,
                    sample_out => data_filter,
-                   sample_out_ready => data_filter_ready);
-                   
-       ena_a <= ena;
-       wea_a <= wea;
-       addra_a <= std_logic_vector(act_address);
-       dina_a <= data_audio;
-       douta_a <= data_ram;
-       
-       reco_ready <= rec_ready;
-       rec_enable <= play_en;
-       
-       sample_request_aux <= sample_request;
-       
-       state_aux <= "000" when state = idle else
-                     "001" when state = filter1 else
-                     "010" when state = filter2 else
-                     "011" when state = record_sampling else
-                     "100" when state = record_save else
-                     "101" when state = reset_mem else
-                     "110" when state = play_forward else
-                     "111";
+                   sample_out_ready => data_filter_ready
+               );
                
    ena <= '1';
-                   
-                   
+                        
     -- FSMD logic
-    -- Register
-    process(clk_12Mhz, reset)
-    begin
-        if reset = '1' then
-            state <= idle;
-            final_address <= (others => '0');
-            act_address <= (others => '0');
-        elsif rising_edge(clk_12Mhz) then
-            state <= next_state;
-            final_address <= next_final_address;
-            act_address <= next_act_address;
-            filter_select <= next_filter_select;
-            filter_in_enable <= middle_filter_in_enable;
-            middle_filter_in_enable <= next_filter_in_enable;
-        end if;     
-    end process;
+        -- Register
+            process(clk_12Mhz, reset)
+            begin
+                if reset = '1' then
+                    state <= idle;
+                    final_address <= (others => '0');
+                    act_address <= (others => '0');
+                elsif rising_edge(clk_12Mhz) then
+                    state <= next_state;
+                    final_address <= next_final_address;
+                    act_address <= next_act_address;
+                    filter_select <= next_filter_select;
+                    filter_in_enable <= middle_filter_in_enable;
+                    middle_filter_in_enable <= next_filter_in_enable; -- filter_in_enable is carried through a double register to deal with clear situations
+                end if;     
+            end process;
     
     -- FSMD states logic
-    -- RELLENAR LISTA DE SENSIBILIDAD
-    process(state, BTNC, BTNL, BTNR, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready)
-    begin
-    -- Default treatment
-        play_en <= '0';
-        record_en <= '0';
-        next_state <= state;
-        next_final_address <= final_address;
-        next_filter_select <= filter_select;
-        next_act_address <= act_address;
-        wea <= "0";
-        next_filter_in_enable <= '0';
-        
-        
-    -- Case structure for state and transition logic
-    case (state) is
-        -- Idle state just checks for next state
-        when idle =>
-        
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then      
-                next_state <= reset_mem;
-            elsif BTNL = '1' then   
-                next_state <= record_sampling;
-            elsif BTNR = '1' then   
-                if SW1 = '0' and sample_request = '1' then
-                    if SW0 = '0' then   
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    else                
-                        next_act_address <= final_address - 1;
-                        next_state <= play_reverse;
-                    end if;
-                elsif SW1 = '1' then    
-                    next_state <= filter1;
-                    next_act_address <= (others => '0');
-                    next_filter_in_enable <= '1'; -- del fir_filter; casi seguro que va a necesitar de un registro
-                    next_filter_select <= SW0;
-                else                    
-                    next_state <= idle;
-                end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
+        process(state, BTNC, BTNL, BTNR, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready)
+        begin
+        -- Default treatment
+            play_en <= '0';
+            record_en <= '0';
+            next_state <= state;
+            next_final_address <= final_address;
+            next_filter_select <= filter_select;
+            next_act_address <= act_address;
+            wea <= "0";
+            next_filter_in_enable <= '0';
             
-        -- Record_sampling waits until microphone sample is ready to be saved
-        -- Mic sample out is directly connected to ram
-        when record_sampling =>
-            record_en <= '1'; -- va  a hacer falta registro, esto es un latch
-            if rec_ready = '1' then
-                next_state <= record_save;
-            else
-                next_state <= record_sampling;
-            end if;
-        
-        -- Record save activates write enable and increments by one last address written
-        when record_save =>
-            wea <= "1"; -- va  a hacer falta registro, esto es un latch
-            next_final_address <= final_address + 1;
-            next_act_address <= act_address + 1;
             
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' and sample_request = '1' then
-                    if SW0 = '0' then
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    else
-                        next_act_address <= final_address - 1;
-                        next_state <= play_reverse;
-                    end if;
-                elsif SW1 = '1' then
-                    next_state <= filter1;
-                    next_act_address <= (others => '0');
-                    next_filter_in_enable <= '1'; -- del fir_filter; casi seguro que va a necesitar de un registro
-                    next_filter_select <= SW0;
-                else
-                    next_state <= idle;
-                end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
-
+        -- Case structure for state and transition logic
+        case (state) is
+            -- Idle state just checks for next state
+            when idle =>
             
-        -- Reset memory changes final address to 0, in order to overwrite previous info
-        
-        when reset_mem =>
-            next_final_address <= (others => '0');
-            next_act_address <= (others => '0');
-            
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' and sample_request = '1' then
-                    if SW0 = '0' then
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    else
-                        next_act_address <= final_address - 1;
-                        next_state <= play_reverse;
-                    end if;
-                elsif SW1 = '1' then
-                    next_state <= filter1;
-                    next_act_address <= (others => '0'); -- En este caso es algo innecesario, pero podríamos dejarlo por guardar el paralelismo entre las cajas verdes
-                    next_filter_in_enable <= '1'; -- del fir_filter; casi seguro que va a necesitar de un registro
-                    next_filter_select <= SW0;
-                else
-                    next_state <= idle;
-                end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
-            
-        -- Play forward
-        
-        when play_forward =>
-            play_en <= '1'; -- Va a hacer falta registro, creo que esto se convierte en latch
-        
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' then
-                    if SW0 = '0' then
-                        --------------------------------
-                        next_state <= play_forward;
-                        if sample_request = '1' then
-                            if act_address = final_address - 1 then
-                                next_act_address <= (others => '0');
-                            else
-                                next_act_address <= act_address + 1;
-                            end if;                             
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then      
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then   
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then   
+                    if SW1 = '0' and sample_request = '1' then
+                        if SW0 = '0' then   
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
+                        else                
+                            next_act_address <= final_address - 1;
+                            next_state <= play_reverse;
                         end if;
-                        --------------------------------
-                    elsif SW0 = '1' and sample_request = '1' then
-                        next_act_address <= final_address - 1;
-                        next_state <= play_reverse;
+                    elsif SW1 = '1' then    
+                        next_state <= filter1;
+                        next_act_address <= (others => '0');
+                        next_filter_in_enable <= '1';
+                        next_filter_select <= SW0;
+                    else                    
+                        next_state <= idle;
                     end if;
-                elsif SW1 = '1' then
-                    next_state <= filter1;
-                    next_act_address <= (others => '0');
-                    next_filter_in_enable <= '1'; -- del fir_filter; casi seguro que va a necesitar de un registro
-                    next_filter_select <= SW0;
                 else
                     next_state <= idle;
                 end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
-        
-        -- Play reverse
-        
-        when play_reverse =>
-            play_en <= '1'; -- Va a hacer falta registro, creo que esto se convierte en latch
-        
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' then
-                    if SW0 = '1' then
-                        --------------------------------
-                        next_state <= play_reverse;
-                        if sample_request = '1' then
-                            if act_address = 0 then
-                                next_act_address <= final_address - 1;
-                            else
-                                next_act_address <= act_address - 1;
-                            end if;                             
-                        end if;
-                        --------------------------------                        
-                    elsif SW0 = '0' and sample_request = '1' then
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    end if;
-                elsif SW1 = '1' then
-                    next_state <= filter1;
-                    next_act_address <= (others => '0');
-                    next_filter_in_enable <= '1'; -- del fir_filter; casi seguro que va a necesitar de un registro
-                    next_filter_select <= SW0;
+                ---------------------------------------------
+                
+            -- Record_sampling waits until microphone sample is ready to be saved
+            -- Mic sample out is directly connected to ram
+            when record_sampling =>
+                record_en <= '1';
+                if rec_ready = '1' then
+                    next_state <= record_save;
                 else
-                    next_state <= idle;
+                    next_state <= record_sampling;
                 end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
             
-        -- Filter, same states use for both inputs, what only changes is filter_select
-        -- Filter1 is used to introduce new sample in the filter
-        
-        when filter1 =>
-            -- haría falta señal intermedia para realizar el cambio a complemento a 2
-            
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' and sample_request = '1' then
-                    if SW0 = '0' then
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    else
-                        next_act_address <= final_address - 1;
-                        next_state <= play_reverse;
-                    end if;
-                elsif SW1 = '1' then
-                    ------------------------------------
-                    -- CUIDADO, ESTO TIENE MALA PINTA
-                    
-                    next_filter_select <= SW0;
-                    
-                    if filter_select = SW0 then --quizas solucion es poner algo de lógica en vez de next_filter_select
-                        if data_filter_ready = '1' then
-                            next_state <= filter2;
+            -- Record save activates write enable and increments by one last address written
+            when record_save =>
+                wea <= "1";
+                next_final_address <= final_address + 1;
+                next_act_address <= act_address + 1;
+                
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' and sample_request = '1' then
+                        if SW0 = '0' then
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
                         else
-                            next_state <= filter1;
+                            next_act_address <= final_address - 1;
+                            next_state <= play_reverse;
                         end if;
-                    else
+                    elsif SW1 = '1' then
+                        next_state <= filter1;
                         next_act_address <= (others => '0');
                         next_filter_in_enable <= '1';
-                        next_state <= filter1;
+                        next_filter_select <= SW0;
+                    else
+                        next_state <= idle;
                     end if;
-                    ------------------------------------
                 else
                     next_state <= idle;
                 end if;
-            else
-                next_state <= idle;
-            end if;
-            ---------------------------------------------
-            
-        when filter2 =>          
-            play_en <= '1'; -- Va a hacer falta registro, creo que esto se convierte en latch
-        
-            ---------------------------------------------
-            --               CAJA VERDE:               --
-            ---------------------------------------------
-            if BTNC = '1' then
-                next_state <= reset_mem;
-            elsif BTNL = '1' then
-                next_state <= record_sampling;
-            elsif BTNR = '1' then
-                if SW1 = '0' then
-                    if SW0 = '1' then
-                        next_state <= play_reverse;
-                        if sample_request = '1' then
-                            if act_address = 0 then
-                                next_act_address <= final_address - 1;
-                            else
-                                next_act_address <= act_address - 1;
-                            end if;                             
+                ---------------------------------------------
+    
+                
+            -- Reset memory changes final address to 0, in order to overwrite previous info
+            when reset_mem =>
+                next_final_address <= (others => '0');
+                next_act_address <= (others => '0');
+                
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' and sample_request = '1' then
+                        if SW0 = '0' then
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
+                        else
+                            next_act_address <= final_address - 1;
+                            next_state <= play_reverse;
                         end if;
-                    elsif SW0 = '0' and sample_request = '1' then
-                        next_act_address <= (others => '0');
-                        next_state <= play_forward;
-                    end if;
-                elsif SW1 = '1' then
-                    if sample_request = '1' then
+                    elsif SW1 = '1' then
                         next_state <= filter1;
+                        next_act_address <= (others => '0');
                         next_filter_in_enable <= '1';
-                        if act_address = final_address - 1 then
+                        next_filter_select <= SW0;
+                    else
+                        next_state <= idle;
+                    end if;
+                else
+                    next_state <= idle;
+                end if;
+                ---------------------------------------------
+                
+            -- Play forward  
+            when play_forward =>
+                play_en <= '1';
+            
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' then
+                        if SW0 = '0' then
+                            --------------------------------
+                            next_state <= play_forward;
+                            if sample_request = '1' then
+                                if act_address = final_address - 1 then
+                                    next_act_address <= (others => '0');
+                                else
+                                    next_act_address <= act_address + 1;
+                                end if;                             
+                            end if;
+                            --------------------------------
+                        elsif SW0 = '1' and sample_request = '1' then
+                            next_act_address <= final_address - 1;
+                            next_state <= play_reverse;
+                        end if;
+                    elsif SW1 = '1' then
+                        next_state <= filter1;
+                        next_act_address <= (others => '0');
+                        next_filter_in_enable <= '1';
+                        next_filter_select <= SW0;
+                    else
+                        next_state <= idle;
+                    end if;
+                else
+                    next_state <= idle;
+                end if;
+                ---------------------------------------------
+            
+            -- Play reverse       
+            when play_reverse =>
+                play_en <= '1';
+            
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' then
+                        if SW0 = '1' then
+                            --------------------------------
+                            next_state <= play_reverse;
+                            if sample_request = '1' then
+                                if act_address = 0 then
+                                    next_act_address <= final_address - 1;
+                                else
+                                    next_act_address <= act_address - 1;
+                                end if;                             
+                            end if;
+                            --------------------------------                        
+                        elsif SW0 = '0' and sample_request = '1' then
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
+                        end if;
+                    elsif SW1 = '1' then
+                        next_state <= filter1;
+                        next_act_address <= (others => '0');
+                        next_filter_in_enable <= '1';
+                        next_filter_select <= SW0;
+                    else
+                        next_state <= idle;
+                    end if;
+                else
+                    next_state <= idle;
+                end if;
+                ---------------------------------------------
+                
+            -- Filter, same states use for both inputs, what only changes is filter_select
+            -- Filter1 is used to introduce new sample in the filter  
+            when filter1 =>
+                
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' and sample_request = '1' then
+                        if SW0 = '0' then
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
+                        else
+                            next_act_address <= final_address - 1;
+                            next_state <= play_reverse;
+                        end if;
+                    elsif SW1 = '1' then                        
+                        next_filter_select <= SW0;
+                        
+                        if filter_select = SW0 then
+                            if data_filter_ready = '1' then
+                                next_state <= filter2;
+                            else
+                                next_state <= filter1;
+                            end if;
+                        else
                             next_act_address <= (others => '0');
                             next_filter_in_enable <= '1';
-                        else
-                            next_act_address <= act_address + 1;
-                            next_filter_in_enable <= '1';
+                            next_state <= filter1;
                         end if;
+                        ------------------------------------
                     else
-                        next_state <= filter2;
+                        next_state <= idle;
                     end if;
                 else
                     next_state <= idle;
                 end if;
-            else
+                ---------------------------------------------
+                
+            when filter2 =>          
+                play_en <= '1';
+            
+                ---------------------------------------------
+                --               CAJA VERDE:               --
+                ---------------------------------------------
+                if BTNC = '1' then
+                    next_state <= reset_mem;
+                elsif BTNL = '1' then
+                    next_state <= record_sampling;
+                elsif BTNR = '1' then
+                    if SW1 = '0' then
+                        if SW0 = '1' then
+                            next_state <= play_reverse;
+                            if sample_request = '1' then
+                                if act_address = 0 then
+                                    next_act_address <= final_address - 1;
+                                else
+                                    next_act_address <= act_address - 1;
+                                end if;                             
+                            end if;
+                        elsif SW0 = '0' and sample_request = '1' then
+                            next_act_address <= (others => '0');
+                            next_state <= play_forward;
+                        end if;
+                    elsif SW1 = '1' then
+                        if sample_request = '1' then
+                            next_state <= filter1;
+                            next_filter_in_enable <= '1';
+                            if act_address = final_address - 1 then
+                                next_act_address <= (others => '0');
+                                next_filter_in_enable <= '1';
+                            else
+                                next_act_address <= act_address + 1;
+                                next_filter_in_enable <= '1';
+                            end if;
+                        else
+                            next_state <= filter2;
+                        end if;
+                    else
+                        next_state <= idle;
+                    end if;
+                else
+                    next_state <= idle;
+                end if;
+                ---------------------------------------------
+                
+            when others =>
                 next_state <= idle;
-            end if;
-            ---------------------------------------------
-            
-        when others =>
-            next_state <= idle;
-            
-        end case;
-    end process;
+                
+            end case;
+        end process;
     
-    
+    -- Conversion from binary to CA2
     sample_in_filter <= not data_ram(sample_size-1) & data_ram(sample_size-2 downto 0);
     
-    
     -- Output Logic
-    signal_speaker <= data_ram when (state = play_forward or state = play_reverse) else
-                      not data_filter(sample_size-1) & data_filter(sample_size-2 downto 0) when (state = filter1 or state = filter2) else
-                      (others => '0');
-                
-                   
-                   -- Cambios solo en el estado filter?
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-                   -- QUE NO SE NOS OLVIDE HACER EL CAMBIO DE CA2 A BINARIO Y VICEVERSA 
-    
+        signal_speaker <= data_ram when (state = play_forward or state = play_reverse) else
+                          not data_filter(sample_size-1) & data_filter(sample_size-2 downto 0) when (state = filter1 or state = filter2) else
+                          (others => '0');    
     
 end Behavioral;

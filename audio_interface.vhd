@@ -52,7 +52,7 @@ entity audio_interface is
 end audio_interface;
 
 architecture Behavioral of audio_interface is
-    -- Component instantiation
+    -- Component declaration
         component pwm is
             Port ( clk_12megas : in STD_LOGIC;
                    reset : in STD_LOGIC;
@@ -121,7 +121,7 @@ begin
     -- Signal assignation in order to play actual PWM data when play_enable is activated. If play_enable is deactivated, jack_pwm is set to all 0's
         jack_pwm <= play_enable and jack_pwm_auxiliar;
 
-    -- Component declaration
+    -- Component instantiation
         PWM_CONVERTER : pwm port map(
             clk_12megas => clk_12megas,
             reset => reset,
