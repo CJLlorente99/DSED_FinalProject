@@ -35,7 +35,7 @@ end seven_segment_manager;
 
 architecture Behavioral of seven_segment_manager is
     -- FSM state type declaration
-        type state_type is (volume1, volume2);
+        type state_type is (idle, volume1, volume2);
         
     -- Signal definition
         -- Register
@@ -52,7 +52,7 @@ begin
         process (clk, reset)
         begin
             if reset = '1' then
-                state <= volume1;
+                state <= idle;
                 count <= (others => '0');
             elsif rising_edge(clk) then
                 state <= next_state;
@@ -63,17 +63,27 @@ begin
     -- FSMD
         process (count, state)
         begin
-            case state is                    
+            case state is
+                when idle =>
+                    next_count <= (others => '0');
+                    if en_volume = '1' then
+                        next_state <= volume1;
+                    else
+                        next_state <= idle;
+                    end if;
+                                    
                 when volume1 =>
                     an <= "10000000";
                     info_to_be_shown <= unsigned(volume_info)/10; -- tens
                     next_count <= count + 1;
                     
-                    if count < refresh_rate then
+                    if count < refresh_rate and en_volume = '1' then
                         next_state <= volume1;
-                    else
+                    elsif en_volume = '1' then
                         next_state <= volume2;
                         next_count <= (others => '0');
+                    else
+                        next_state <= idle;
                     end if;
                     
                 when volume2 =>
@@ -81,15 +91,17 @@ begin
                     info_to_be_shown <= unsigned(volume_info) mod 10; -- units
                     next_count <= count + 1;
                     
-                    if count < refresh_rate then
+                    if count < refresh_rate and en_volume = '1' then
                         next_state <= volume2;
-                    else
+                    elsif en_volume = '1' then
                         next_state <= volume1;
                         next_count <= (others => '0');
+                    else
+                        next_state <= idle;
                     end if;
                 
                 when others =>
-                    next_state <= volume1;
+                    next_state <= idle;
             
             end case;
         end process;
