@@ -78,7 +78,7 @@ begin
             end if;
         end process;
     
-    -- Mealy FSMD
+    -- FSMD
         process (state, reset, micro_data, count, next_count, first_cycle, enable_4_cycles, data1, data2, sample_out_unsig, next_data1, next_data2)
         begin
             -- Default treatment

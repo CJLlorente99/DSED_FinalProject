@@ -36,7 +36,7 @@ end enable_generator;
 architecture Behavioral of enable_generator is
     -- Signal declaration
         -- Registers
-        signal count, next_count : unsigned(2 downto 0);
+        signal count, next_count : unsigned(1 downto 0);
     
 begin
 
@@ -44,15 +44,14 @@ begin
         process (clk_12megas, reset)
         begin
             if reset = '1' then
-                count <= "000";
+                count <= "00";
             elsif rising_edge(clk_12megas) then
                 count <= next_count;
             end if;
         end process;
     
     -- Next-state logic
-        next_count <= count + 1 when count < 4 else
-                      "001";
+        next_count <= count + 1;
     
     -- Output logic
         clk_3megas <= '1' when (count = 2 or count = 3) else
