@@ -50,7 +50,14 @@ entity dsed_audio is
          -- To/From the mini_jack
          jack_sd : out STD_LOGIC;
          jack_pwm : out STD_LOGIC;
-         LED : out STD_LOGIC_VECTOR(7 downto 0)
+         LED : out STD_LOGIC_VECTOR(7 downto 0);
+         -- Volume control
+         volume_up : in STD_LOGIC;
+         volume_down : in STD_LOGIC;
+         enable_volume : in STD_LOGIC;
+         -- Seven segment outputs
+         an : out STD_LOGIC_VECTOR (7 downto 0);
+         seven_seg : out STD_LOGIC_VECTOR (6 downto 0)
     );
 end dsed_audio;
 
@@ -117,6 +124,30 @@ architecture Behavioral of dsed_audio is
                 sample_out_ready : out STD_LOGIC
             );
         end component;
+        
+        -- Volume control
+        component volume_control is
+            Port ( 
+                clk : in STD_LOGIC;
+                enable : in STD_LOGIC;
+                reset : in STD_LOGIC;
+                level_up : in STD_LOGIC;
+                level_down : in STD_LOGIC;
+                sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
+            );
+        end component;
+        
+        -- Seven segment manager
+        component seven_segment_manager is
+            Port ( clk : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   volume_info : in STD_LOGIC_VECTOR (6 downto 0);
+                   en_volume : in STD_LOGIC;
+                   an : out STD_LOGIC_VECTOR (7 downto 0);
+                   seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
+        end component;
     
     --FSM state type declaration
     type state_type is (idle, filter1, filter2, record_sampling, record_save, reset_mem, play_forward, play_reverse);
@@ -138,6 +169,10 @@ architecture Behavioral of dsed_audio is
         signal filter_in_enable, next_filter_in_enable, middle_filter_in_enable, filter_select : STD_LOGIC := '0';
         signal data_filter : STD_LOGIC_VECTOR(7 downto 0);
         signal data_filter_ready : STD_LOGIC;
+        
+        -- Volume control
+        signal volume_to_seven : STD_LOGIC_VECTOR (6 downto 0);
+        signal from_volume_to_speaker : STD_LOGIC_VECTOR (sample_size-1 downto 0);
         
         -- Extra signals
         signal signal_speaker : STD_LOGIC_VECTOR (sample_size -1 downto 0);
@@ -169,7 +204,7 @@ begin
                    micro_data => micro_data, 
                    micro_LR => micro_LR, 
                    play_enable => play_en,
-                   sample_in => signal_speaker,
+                   sample_in => from_volume_to_speaker,
                    sample_request => sample_request,
                    jack_sd => jack_sd,
                    jack_pwm => jack_pwm,
@@ -195,6 +230,28 @@ begin
                    filter_select => filter_select,
                    sample_out => data_filter,
                    sample_out_ready => data_filter_ready
+               );
+               
+    -- volume_control instantiation
+    VOLUME : volume_control
+        port map ( clk => clk_12Mhz,
+                   enable => enable_volume,
+                   reset => reset,
+                   level_up => volume_up,
+                   level_down => volume_down,
+                   sample_in => signal_speaker,
+                   sample_out => from_volume_to_speaker,
+                   to_seven_seg => volume_to_seven
+               );
+               
+    -- seven segment instantiation
+    SEVEN_SEG_MANAGER : seven_segment_manager
+        port map ( clk => clk_12Mhz,
+                   reset => reset,
+                   volume_info => volume_to_seven,
+                   en_volume => enable_volume,
+                   an => an,
+                   seven_seg => seven_seg
                );
                
    ena <= '1';
@@ -249,7 +306,7 @@ begin
                             next_act_address <= (others => '0');
                             next_state <= play_forward;
                         else                
-                            next_act_address <= final_address - 1;
+                            next_act_address <= final_address;
                             next_state <= play_reverse;
                         end if;
                     elsif SW1 = '1' then    
@@ -294,7 +351,7 @@ begin
                             next_act_address <= (others => '0');
                             next_state <= play_forward;
                         else
-                            next_act_address <= final_address - 1;
+                            next_act_address <= final_address;
                             next_state <= play_reverse;
                         end if;
                     elsif SW1 = '1' then
@@ -329,7 +386,7 @@ begin
                             next_act_address <= (others => '0');
                             next_state <= play_forward;
                         else
-                            next_act_address <= final_address - 1;
+                            next_act_address <= final_address;
                             next_state <= play_reverse;
                         end if;
                     elsif SW1 = '1' then
@@ -362,7 +419,7 @@ begin
                             --------------------------------
                             next_state <= play_forward;
                             if sample_request = '1' then
-                                if act_address = final_address - 1 then
+                                if act_address = final_address then
                                     next_act_address <= (others => '0');
                                 else
                                     next_act_address <= act_address + 1;
@@ -370,7 +427,7 @@ begin
                             end if;
                             --------------------------------
                         elsif SW0 = '1' and sample_request = '1' then
-                            next_act_address <= final_address - 1;
+                            next_act_address <= final_address;
                             next_state <= play_reverse;
                         end if;
                     elsif SW1 = '1' then
@@ -404,7 +461,7 @@ begin
                             next_state <= play_reverse;
                             if sample_request = '1' then
                                 if act_address = 0 then
-                                    next_act_address <= final_address - 1;
+                                    next_act_address <= final_address;
                                 else
                                     next_act_address <= act_address - 1;
                                 end if;                             
@@ -444,7 +501,7 @@ begin
                             next_act_address <= (others => '0');
                             next_state <= play_forward;
                         else
-                            next_act_address <= final_address - 1;
+                            next_act_address <= final_address;
                             next_state <= play_reverse;
                         end if;
                     elsif SW1 = '1' then                        
@@ -486,7 +543,7 @@ begin
                             next_state <= play_reverse;
                             if sample_request = '1' then
                                 if act_address = 0 then
-                                    next_act_address <= final_address - 1;
+                                    next_act_address <= final_address;
                                 else
                                     next_act_address <= act_address - 1;
                                 end if;                             
@@ -499,7 +556,7 @@ begin
                         if sample_request = '1' then
                             next_state <= filter1;
                             next_filter_in_enable <= '1';
-                            if act_address = final_address - 1 then
+                            if act_address = final_address then
                                 next_act_address <= (others => '0');
                                 next_filter_in_enable <= '1';
                             else
@@ -524,7 +581,7 @@ begin
         end process;
     
     -- Conversion from binary to CA2
-    sample_in_filter <= not data_ram(sample_size-1) & data_ram(sample_size-2 downto 0);
+        sample_in_filter <= not data_ram(sample_size-1) & data_ram(sample_size-2 downto 0);
     
     -- Output Logic
         signal_speaker <= data_ram when (state = play_forward or state = play_reverse) else
