@@ -42,7 +42,7 @@ architecture Behavioral of pwm is
         signal sample, next_sample : STD_LOGIC_VECTOR(sample_size - 1 downto 0) := (others => '0');
         
         -- Auxiliar signals
-        signal togle : STD_LOGIC := '0';
+        signal toggle, next_toggle : STD_LOGIC := '0';
 
 begin
 
@@ -51,16 +51,15 @@ begin
         begin
             if reset = '1' then
                 count <= (others => '0');
-                togle <= '0';
+                toggle <= '0';
                 sample <= (others => '0');
             elsif rising_edge(clk_12megas) then
             
-                togle <= '0';
+                toggle <= next_toggle;
                 sample <= next_sample;
             
                 if en_2_cycles = '1' then
                     count <= next_count;
-                    togle <= '1';
                 end if;
             end if;
         end process;
@@ -69,9 +68,10 @@ begin
         next_count <= count + 1 when count < 299 else (others => '0');
         next_sample <= sample_in when (count = 299) else
                        sample;
+        next_toggle <= not toggle;
     
     --Output logic
         pwm_pulse <= '1' when (unsigned(sample) > count) else '0';
-        sample_request <= '1' when (count = 299) and (togle = '1') else '0';
+        sample_request <= '1' when (count = 299) and (toggle = '1') else '0';
 
 end Behavioral;
