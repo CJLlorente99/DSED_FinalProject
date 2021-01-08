@@ -54,8 +54,7 @@ entity dsed_audio is
          -- Volume control
          volume_up : in STD_LOGIC;
          volume_down : in STD_LOGIC;
-         enable_volume : in STD_LOGIC;
-         -- Seven segment outputs
+         -- Seven segments
          an : out STD_LOGIC_VECTOR (7 downto 0);
          seven_seg : out STD_LOGIC_VECTOR (6 downto 0)
     );
@@ -125,26 +124,26 @@ architecture Behavioral of dsed_audio is
             );
         end component;
         
-        -- Volume control
+        -- Volume control declaration
+        
         component volume_control is
             Port ( 
                 clk : in STD_LOGIC;
-                enable : in STD_LOGIC;
                 reset : in STD_LOGIC;
                 level_up : in STD_LOGIC;
                 level_down : in STD_LOGIC;
                 sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0)
+--                to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
             );
         end component;
         
         -- Seven segment manager
+        
         component seven_segment_manager is
             Port ( clk : in STD_LOGIC;
                    reset : in STD_LOGIC;
                    volume_info : in STD_LOGIC_VECTOR (6 downto 0);
-                   en_volume : in STD_LOGIC;
                    an : out STD_LOGIC_VECTOR (7 downto 0);
                    seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
         end component;
@@ -170,9 +169,9 @@ architecture Behavioral of dsed_audio is
         signal data_filter : STD_LOGIC_VECTOR(7 downto 0);
         signal data_filter_ready : STD_LOGIC;
         
-        -- Volume control
-        signal volume_to_seven : STD_LOGIC_VECTOR (6 downto 0);
-        signal from_volume_to_speaker : STD_LOGIC_VECTOR (sample_size-1 downto 0);
+        -- Volume
+        signal from_volume_to_pwm : STD_LOGIC_VECTOR (sample_size-1 downto 0);
+        signal from_volume_to_seven : STD_LOGIC_VECTOR (6 downto 0);
         
         -- Extra signals
         signal signal_speaker : STD_LOGIC_VECTOR (sample_size -1 downto 0);
@@ -204,7 +203,7 @@ begin
                    micro_data => micro_data, 
                    micro_LR => micro_LR, 
                    play_enable => play_en,
-                   sample_in => from_volume_to_speaker,
+                   sample_in => from_volume_to_pwm,
                    sample_request => sample_request,
                    jack_sd => jack_sd,
                    jack_pwm => jack_pwm,
@@ -232,27 +231,26 @@ begin
                    sample_out_ready => data_filter_ready
                );
                
-    -- volume_control instantiation
+    -- volume instantation
     VOLUME : volume_control
         port map ( clk => clk_12Mhz,
-                   enable => enable_volume,
                    reset => reset,
                    level_up => volume_up,
                    level_down => volume_down,
                    sample_in => signal_speaker,
-                   sample_out => from_volume_to_speaker,
-                   to_seven_seg => volume_to_seven
-               );
-               
-    -- seven segment instantiation
-    SEVEN_SEG_MANAGER : seven_segment_manager
-        port map ( clk => clk_12Mhz,
-                   reset => reset,
-                   volume_info => volume_to_seven,
-                   en_volume => enable_volume,
-                   an => an,
-                   seven_seg => seven_seg
-               );
+                   sample_out => from_volume_to_pwm
+--                   to_seven_seg => from_volume_to_seven
+                );
+                
+    -- seven segment manager instantation
+            
+--    SEVEN_SEG_MANAGER : seven_segment_manager
+--        port map ( clk => clk_12Mhz,
+--                   reset => reset,
+--                   volume_info => from_volume_to_seven,
+--                   an => an,
+--                   seven_seg => seven_seg
+--               );
                
    ena <= '1';
                         
@@ -275,7 +273,7 @@ begin
             end process;
     
     -- FSMD states logic
-        process(state, BTNC, BTNL, BTNR, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready)
+        process(state, BTNC, BTNL, BTNR, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready, final_address, act_address)
         begin
         -- Default treatment
             play_en <= '0';
@@ -420,7 +418,8 @@ begin
                             next_state <= play_forward;
                             if sample_request = '1' then
                                 if act_address = final_address then
-                                    next_act_address <= (others => '0');
+                                    next_act_address <= act_address;
+                                    play_en <= '0';
                                 else
                                     next_act_address <= act_address + 1;
                                 end if;                             
@@ -461,7 +460,8 @@ begin
                             next_state <= play_reverse;
                             if sample_request = '1' then
                                 if act_address = 0 then
-                                    next_act_address <= final_address;
+                                    next_act_address <= act_address;
+                                    play_en <= '0';
                                 else
                                     next_act_address <= act_address - 1;
                                 end if;                             
@@ -557,8 +557,9 @@ begin
                             next_state <= filter1;
                             next_filter_in_enable <= '1';
                             if act_address = final_address then
-                                next_act_address <= (others => '0');
+                                next_act_address <= act_address;
                                 next_filter_in_enable <= '1';
+                                play_en <= '0';
                             else
                                 next_act_address <= act_address + 1;
                                 next_filter_in_enable <= '1';

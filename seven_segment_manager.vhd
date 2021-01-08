@@ -28,7 +28,6 @@ entity seven_segment_manager is
     Port ( clk : in STD_LOGIC;
            reset : in STD_LOGIC;
            volume_info : in STD_LOGIC_VECTOR (6 downto 0);
-           en_volume : in STD_LOGIC;
            an : out STD_LOGIC_VECTOR (7 downto 0);
            seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
 end seven_segment_manager;
@@ -61,34 +60,29 @@ begin
         end process;
         
     -- FSMD
-        process (count, state, en_volume)
+        process (count, state, volume_info)
         begin
             -- Default treatment
                 an <= (others => '1');
                 info_to_be_shown <= (others => '0');
+                next_state <= state;
                         
             case state is
                 
                 when idle =>
                     next_count <= (others => '0');
-                    if en_volume = '1' then
-                        next_state <= volume1;
-                    else
-                        next_state <= idle;
-                    end if;
+                    next_state <= volume1;
                                     
                 when volume1 =>
                     an <= "01111111";
                     info_to_be_shown <= unsigned(volume_info)/10; -- tens
                     next_count <= count + 1;
                     
-                    if count < refresh_rate and en_volume = '1' then
+                    if count < refresh_rate then
                         next_state <= volume1;
-                    elsif count >= refresh_rate and en_volume = '1' then
+                    elsif count >= refresh_rate then
                         next_state <= volume2;
                         next_count <= (others => '0');
-                    else
-                        next_state <= idle;
                     end if;
                     
                 when volume2 =>
@@ -96,13 +90,11 @@ begin
                     info_to_be_shown <= unsigned(volume_info) mod 10; -- units
                     next_count <= count + 1;
                     
-                    if count < refresh_rate and en_volume = '1' then
+                    if count < refresh_rate then
                         next_state <= volume2;
-                    elsif count >= refresh_rate and en_volume = '1' then
+                    elsif count >= refresh_rate then
                         next_state <= volume1;
                         next_count <= (others => '0');
-                    else
-                        next_state <= idle;
                     end if;
                 
                 when others =>

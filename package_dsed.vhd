@@ -27,7 +27,7 @@ package package_dsed is
     constant factor_size : integer := 11;
     
     -- 7 segments refresh rate
-    constant refresh_rate : integer := 400;
+    constant refresh_rate : integer := 12000;
     
     -- 7 segments useful constant
     constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";

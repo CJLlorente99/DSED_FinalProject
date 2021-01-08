@@ -27,13 +27,12 @@ use work.package_dsed.ALL;
 entity volume_control is
     Port ( 
         clk : in STD_LOGIC;
-        enable : in STD_LOGIC;
         reset : in STD_LOGIC;
         level_up : in STD_LOGIC;
         level_down : in STD_LOGIC;
         sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-        sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
-        to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
+        sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0)
+--        to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
     );
 end volume_control;
 
@@ -41,12 +40,14 @@ architecture Behavioral of volume_control is
     -- Signal declaration
         -- Registers
         signal level, next_level : UNSIGNED(4 downto 0);
-        signal volume_up, next_volume_up, volume_down, next_volume_down : STD_LOGIC;
         
         -- Unsigned to compute easily
         signal sample_out_unsig : UNSIGNED(sample_size+factor_size-1 downto 0);
         signal sample_in_unsig : UNSIGNED (sample_size-1 downto 0);
         signal factor : UNSIGNED(factor_size-1 downto 0);
+        
+        signal count, next_count : UNSIGNED (10 downto 0); -- CAMBIAR
+        signal enable : STD_LOGIC;
 
 begin    
     -- Register
@@ -54,29 +55,28 @@ begin
         begin
             if reset = '1' then
                 level <= "01010"; -- When reset -> factor = 1
-                volume_up <= '0';
-                volume_down <= '0';
+                count <= (others => '0');
             elsif rising_edge(clk) then
-                level <= next_level;
-                volume_up <= next_volume_up;
-                volume_down <= next_volume_down;
+                if enable = '1' then
+                    level <= next_level;
+                end if;
+                count <= next_count;
             end if;
         end process;
         
     -- Next-state logic
-        next_volume_up <= '1' when level_up = '1' and volume_up = '0' else
-                          '0';
-                          
-        next_volume_down <= '1' when level_down = '1' and volume_down = '0' else
-                            '0';
     
-        next_level <= level + 1 when volume_up = '1' and level < 20 else
-                      level - 1 when volume_down = '1' and level > 0 else
+        next_level <= level + 1 when level_up = '1' and level < 20 else
+                      level - 1 when level_down = '1' and level > 0 else
                       level;
                       
+        next_count <= count + 1;
+                      
+        enable <= '1' when count = 10 else -- doesnt matter when it repeats, as long as it is not affected by reset
+                  '0';
+                      
     -- Output logic
-        factor <= volume10 when enable = '0' else
-                  volume0 when level = 0 else
+        factor <= volume0 when level = 0 else
                   volume1 when level = 1 else
                   volume2 when level = 2 else
                   volume3 when level = 3 else
@@ -96,15 +96,17 @@ begin
                   volume17 when level = 17 else
                   volume18 when level = 18 else
                   volume19 when level = 19 else
-                  volume20 when level = 20;
+                  volume20 when level = 20 else
+                  volume10;
                   
         sample_out_unsig <= sample_in_unsig * unsigned(std_logic_vector(factor));
     
     -- Assign inputs and deal with outputs and saturation
         sample_in_unsig <= unsigned(sample_in);
         
-        sample_out <= (others => '1') when sample_out_unsig(sample_size+factor_size-1 downto sample_size+factor_size-3) /= 0 else -- POSITIVE SATURATION
-                      std_logic_vector(sample_out_unsig(sample_size+factor_size-1-3 downto factor_size-3)); 
+        sample_out <= (others => '1') when sample_out_unsig(sample_size+factor_size-1 downto sample_size+factor_size-4) /= 0 else -- POSITIVE SATURATION
+                      std_logic_vector(sample_out_unsig(sample_size+factor_size-5 downto factor_size-4)); 
                       
-        to_seven_seg <= "00" & std_logic_vector(level);
+--        to_seven_seg <= "00" & std_logic_vector(level);
+        
 end Behavioral;
