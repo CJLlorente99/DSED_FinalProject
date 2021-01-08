@@ -1,7 +1,7 @@
 %% Script que importa los datos procesados por el filtro implementado en la 
 % FPGA y los compara con los filtrados idealmente
 
-L = length(data) - 2;
+clc; clear;
 
 % Importar ficheros .dat
 
@@ -11,6 +11,8 @@ data_out_FPGA_LP = load('../../output_data/sample_out_haha_LP.dat')./127;
 % Tratar datos originales
 
 [data,fs] = audioread('../data/haha.wav');
+
+L = length(data) - 2;
 
 filterHP = filter([-0.0078 -0.2031 0.6015 -0.2031 -0.0078], [1 0 0 0 0], data);
 filterLP = filter([0.039 0.2422 0.4453 0.2422 0.039], [1 0 0 0 0], data);
