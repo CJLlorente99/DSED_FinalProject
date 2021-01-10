@@ -31,8 +31,8 @@ entity volume_control is
         level_up : in STD_LOGIC;
         level_down : in STD_LOGIC;
         sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-        sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0)
---        to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
+        sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+        to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
     );
 end volume_control;
 
@@ -40,13 +40,13 @@ architecture Behavioral of volume_control is
     -- Signal declaration
         -- Registers
         signal level, next_level : UNSIGNED(4 downto 0);
-        
+                
         -- Unsigned to compute easily
         signal sample_out_unsig : UNSIGNED(sample_size+factor_size-1 downto 0);
         signal sample_in_unsig : UNSIGNED (sample_size-1 downto 0);
         signal factor : UNSIGNED(factor_size-1 downto 0);
         
-        signal count, next_count : UNSIGNED (10 downto 0); -- CAMBIAR
+        signal count, next_count : UNSIGNED (21 downto 0); -- CAMBIAR
         signal enable : STD_LOGIC;
 
 begin    
@@ -66,7 +66,7 @@ begin
         
     -- Next-state logic
     
-        next_level <= level + 1 when level_up = '1' and level < 20 else
+        next_level <= level + 1 when level_up = '1'  and level < 20 else
                       level - 1 when level_down = '1' and level > 0 else
                       level;
                       
@@ -107,6 +107,6 @@ begin
         sample_out <= (others => '1') when sample_out_unsig(sample_size+factor_size-1 downto sample_size+factor_size-4) /= 0 else -- POSITIVE SATURATION
                       std_logic_vector(sample_out_unsig(sample_size+factor_size-5 downto factor_size-4)); 
                       
---        to_seven_seg <= "00" & std_logic_vector(level);
+        to_seven_seg <= "00" & std_logic_vector(level);
         
 end Behavioral;

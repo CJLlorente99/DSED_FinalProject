@@ -133,8 +133,8 @@ architecture Behavioral of dsed_audio is
                 level_up : in STD_LOGIC;
                 level_down : in STD_LOGIC;
                 sample_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
-                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0)
---                to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
+                sample_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                to_seven_seg : out STD_LOGIC_VECTOR (6 downto 0) -- Sent to the 7 segment manager
             );
         end component;
         
@@ -238,19 +238,19 @@ begin
                    level_up => volume_up,
                    level_down => volume_down,
                    sample_in => signal_speaker,
-                   sample_out => from_volume_to_pwm
---                   to_seven_seg => from_volume_to_seven
+                   sample_out => from_volume_to_pwm,
+                   to_seven_seg => from_volume_to_seven
                 );
                 
     -- seven segment manager instantation
             
---    SEVEN_SEG_MANAGER : seven_segment_manager
---        port map ( clk => clk_12Mhz,
---                   reset => reset,
---                   volume_info => from_volume_to_seven,
---                   an => an,
---                   seven_seg => seven_seg
---               );
+    SEVEN_SEG_MANAGER : seven_segment_manager
+        port map ( clk => clk_12Mhz,
+                   reset => reset,
+                   volume_info => from_volume_to_seven,
+                   an => an,
+                   seven_seg => seven_seg
+               );
                
    ena <= '1';
                         

@@ -34,11 +34,11 @@ end seven_segment_manager;
 
 architecture Behavioral of seven_segment_manager is
     -- FSM state type declaration
-        type state_type is (idle, volume1, volume2);
+        type state_type is (idle, volume1, volume2, volume3, volume4, volume5);
         
     -- Signal definition
         -- Register
-        signal count, next_count : UNSIGNED (7 downto 0);
+        signal count, next_count : UNSIGNED (13 downto 0); -- CAREFULL, SHOULD BE CHANGED ACCORDING TO refresh_rate constant
         
         -- FSM state declaration
         signal state, next_state : state_type;
@@ -74,8 +74,8 @@ begin
                     next_state <= volume1;
                                     
                 when volume1 =>
-                    an <= "01111111";
-                    info_to_be_shown <= unsigned(volume_info)/10; -- tens
+                    an <= "10111111";
+                    info_to_be_shown <= to_unsigned(10,7); -- tens
                     next_count <= count + 1;
                     
                     if count < refresh_rate then
@@ -86,12 +86,48 @@ begin
                     end if;
                     
                 when volume2 =>
-                    an <= "10111111";
-                    info_to_be_shown <= unsigned(volume_info) mod 10; -- units
+                    an <= "11011111";
+                    info_to_be_shown <= to_unsigned(11,7); -- units
                     next_count <= count + 1;
                     
                     if count < refresh_rate then
                         next_state <= volume2;
+                    elsif count >= refresh_rate then
+                        next_state <= volume3;
+                        next_count <= (others => '0');
+                    end if;
+                    
+                when volume3 =>
+                    an <= "11101111";
+                    info_to_be_shown <= to_unsigned(12,7); -- tens
+                    next_count <= count + 1;
+                    
+                    if count < refresh_rate then
+                        next_state <= volume3;
+                    elsif count >= refresh_rate then
+                        next_state <= volume4;
+                        next_count <= (others => '0');
+                    end if;
+                    
+                when volume4 =>
+                    an <= "11111011";
+                    info_to_be_shown <= unsigned(volume_info)/10; -- tens
+                    next_count <= count + 1;
+                    
+                    if count < refresh_rate then
+                        next_state <= volume4;
+                    elsif count >= refresh_rate then
+                        next_state <= volume5;
+                        next_count <= (others => '0');
+                    end if;
+                    
+                when volume5 =>
+                    an <= "11111101";
+                    info_to_be_shown <= unsigned(volume_info) mod 10; -- tens
+                    next_count <= count + 1;
+                    
+                    if count < refresh_rate then
+                        next_state <= volume5;
                     elsif count >= refresh_rate then
                         next_state <= volume1;
                         next_count <= (others => '0');
@@ -114,6 +150,9 @@ begin
                          seven_7_seg when info_to_be_shown = 7 else
                          eight_7_seg when info_to_be_shown = 8 else
                          nine_7_seg when info_to_be_shown = 9 else
+                         V_7_seg when info_to_be_shown = 10 else
+                         O_7_seg when info_to_be_shown = 11 else
+                         L_7_seg when info_to_be_shown = 12 else
                          zero_7_seg;
                       
 end Behavioral;
