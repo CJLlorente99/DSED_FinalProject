@@ -38,9 +38,11 @@ architecture Behavioral of seven_segment_manager is
         
     -- Signal definition
         -- Register
-        signal count, next_count : UNSIGNED (13 downto 0); -- CAREFULL, SHOULD BE CHANGED ACCORDING TO refresh_rate constant
+        signal count, next_count, rotating_count, next_rotating_count : UNSIGNED (13 downto 0); -- CAREFULL, SHOULD BE CHANGED ACCORDING TO refresh_rate constant
         signal iterator, next_iterator : UNSIGNED (7 downto 0);
-        signal digit_shown, next_digit_shown : UNSIGNED(7 downto 0);
+        signal digit_shown, next_digit_shown : UNSIGNED(2 downto 0);
+        signal rotating_info, next_rotating_info : UNSIGNED(2 downto 0);
+        signal act_info : SEVEN_SEG_INFO (8*num_info - 1 downto 0);
         
         -- FSM state declaration
         signal state, next_state : state_type;
@@ -51,6 +53,14 @@ architecture Behavioral of seven_segment_manager is
 
 begin
     -- info association
+--        info(15) <= (others => '1');
+--        info(14) <= to_unsigned(letter_I, 7);
+--        info(13) <= to_unsigned(letter_N, 7);
+--        info(12) <= to_unsigned(letter_F, 7);
+--        info(11) <= (others => '1');
+--        info(10) <= to_unsigned(letter_A, 7);
+--        info(9) <= to_unsigned(letter_D, 7);
+--        info(8) <= to_unsigned(letter_D, 7);        
         info(7) <= (others => '1');
         info(6) <= to_unsigned(letter_V, 7);
         info(5) <= to_unsigned(letter_O, 7);
@@ -66,32 +76,40 @@ begin
             if reset = '1' then
                 state <= idle;
                 count <= (others => '0');
+                rotating_count <= (others => '0');
                 iterator <= "10000000";
-                digit_shown <= to_unsigned(info'length,8) - 1;
+                digit_shown <= to_unsigned(info'length,digit_shown'length) - 1;
+                rotating_info <= (others => '0');
             elsif rising_edge(clk) then
                 state <= next_state;
                 count <= next_count;
+                rotating_count <= next_rotating_count;
                 iterator <= next_iterator;
                 digit_shown <= next_digit_shown;
+                rotating_info <= next_rotating_info;
             end if;
         end process;
         
     -- FSMD
-        process (count, state, digit_shown, iterator)
+        process (count, state, digit_shown, iterator, rotating_count)
         begin
             -- Default treatment
                 next_iterator <= iterator;
                 next_state <= state;
                 next_count <= count;
+                next_rotating_count <= rotating_count;
                 next_digit_shown <= digit_shown;
+                next_rotating_info <= rotating_info;
                         
             case state is
                 
                 when idle =>
                     next_count <= (others => '0');
+                    next_rotating_count <= (others => '0');
                     next_iterator <= "10000000";
-                    next_digit_shown <= to_unsigned(info'length,8) - 1;
+                    next_digit_shown <= to_unsigned(info'length,digit_shown'length) - 1;
                     next_state <= show;
+                    next_rotating_info <= (others => '0');
                     
                 when show =>
                     next_count <= count + 1;                    
@@ -103,7 +121,13 @@ begin
                         next_count <= (others => '0');
                         
                         if digit_shown = 0 then
-                            next_digit_shown <= to_unsigned(info'length, 8) - 1;
+                            next_digit_shown <= to_unsigned(info'length, digit_shown'length) - 1;
+                            if rotating_count < rotation_rate then
+                                next_rotating_count <= rotating_count + 1;
+                            else
+                                next_rotating_info <= rotating_info + 1;
+                                next_rotating_count <= (others => '0');
+                            end if;
                         else
                             next_digit_shown <= digit_shown - 1;
                         end if;
@@ -116,7 +140,24 @@ begin
         end process;
         
         -- Output Logic
-            info_to_be_shown <= info(to_integer(digit_shown));
+            act_info <= info(0 downto 0) & info(8*num_info-1 downto 1) when rotating_info = 1 else
+                        info(1 downto 0) & info(8*num_info-1 downto 2) when rotating_info = 2 else
+                        info(2 downto 0) & info(8*num_info-1 downto 3) when rotating_info = 3 else
+                        info(3 downto 0) & info(8*num_info-1 downto 4) when rotating_info = 4 else
+                        info(4 downto 0) & info(8*num_info-1 downto 5) when rotating_info = 5 else
+                        info(5 downto 0) & info(8*num_info-1 downto 6) when rotating_info = 6 else
+                        info(6 downto 0) & info(8*num_info-1 downto 7) when rotating_info = 7 else
+--                        info(7 downto 0) & info(8*num_info-1 downto 8) when rotating_info = 8 else
+--                        info(8 downto 0) & info(8*num_info-1 downto 9) when rotating_info = 9 else
+--                        info(9 downto 0) & info(8*num_info-1 downto 10) when rotating_info = 10 else
+--                        info(10 downto 0) & info(8*num_info-1 downto 11) when rotating_info = 11 else
+--                        info(11 downto 0) & info(8*num_info-1 downto 12) when rotating_info = 12 else
+--                        info(12 downto 0) & info(8*num_info-1 downto 13) when rotating_info = 13 else
+--                        info(13 downto 0) & info(8*num_info-1 downto 14) when rotating_info = 14 else
+--                        info(14 downto 0) & info(8*num_info-1 downto 15) when rotating_info = 15 else
+                        info;
+        
+            info_to_be_shown <= act_info(to_integer(digit_shown));
                                         
             seven_seg <= zero_7_seg when info_to_be_shown = 0 else
                          one_7_seg when info_to_be_shown = 1 else

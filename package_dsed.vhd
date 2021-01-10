@@ -23,11 +23,12 @@ use IEEE.NUMERIC_STD.ALL;
 
 package package_dsed is
     
-        constant sample_size :integer := 8;
+        constant sample_size : integer := 8;
         constant factor_size : integer := 11;
     
     -- 7 segments refresh rate
         constant refresh_rate : integer := 12000;
+        constant rotation_rate : integer := 125;
     
     -- type definition for 7 seg purposes  
         type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
@@ -48,32 +49,32 @@ package package_dsed is
         constant nine_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010000";
         constant blank_7_seg : STD_LOGIC_VECTOR (6 downto 0) := (others => '1');
         
-        constant A_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant B_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant C_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant D_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant E_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant F_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant G_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant H_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant I_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant J_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant A_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001000";
+        constant B_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000011";
+        constant C_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100111";
+        constant D_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100001";
+        constant E_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000110";
+        constant F_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001110";
+        constant G_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000010";
+        constant H_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001001";
+        constant I_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1101111";
+        constant J_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1100001";
         constant K_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         constant L_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000111";
         constant M_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant N_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant N_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101011";
         constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := zero_7_seg;
-        constant P_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant Q_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant S_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant T_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant U_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant P_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001100";
+        constant Q_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0011000";
+        constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001000";
+        constant S_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010010";
+        constant T_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101111";
+        constant U_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1100011";
         constant V_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000001";
         constant W_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         constant X_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant Y_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        constant Z_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant Y_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001101";
+        constant Z_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100100";
         
         constant number_0 : integer := 0;
         constant number_1 : integer := 1;
@@ -148,5 +149,6 @@ package package_dsed is
         constant volume18 : unsigned(factor_size-1 downto 0) := "01010101111";
         constant volume19 : unsigned(factor_size-1 downto 0) := "01101000111";
         constant volume20 : unsigned(factor_size-1 downto 0) := "10000000000";
-    
+        
 end package_dsed;
+        
