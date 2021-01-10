@@ -23,27 +23,94 @@ use IEEE.NUMERIC_STD.ALL;
 
 package package_dsed is
     
-    constant sample_size :integer := 8;
-    constant factor_size : integer := 11;
+        constant sample_size :integer := 8;
+        constant factor_size : integer := 11;
     
     -- 7 segments refresh rate
-    constant refresh_rate : integer := 12000;
+        constant refresh_rate : integer := 12000;
+    
+    -- type definition for 7 seg purposes  
+        type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
+    
+    -- Number of sources to be shown in 7 segment
+        constant num_info : natural := 1;
     
     -- 7 segments useful constant
-    constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";
-    constant one_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111001";
-    constant two_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100100";
-    constant three_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0110000";
-    constant four_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0011001";
-    constant five_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010010";
-    constant six_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000010";
-    constant seven_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111000";
-    constant eight_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000000";
-    constant nine_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010000";
-    
-    constant V_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000001";
-    constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := zero_7_seg;
-    constant L_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000111";
+        constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";
+        constant one_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111001";
+        constant two_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100100";
+        constant three_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0110000";
+        constant four_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0011001";
+        constant five_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010010";
+        constant six_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000010";
+        constant seven_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111000";
+        constant eight_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0000000";
+        constant nine_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010000";
+        constant blank_7_seg : STD_LOGIC_VECTOR (6 downto 0) := (others => '1');
+        
+        constant A_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant B_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant C_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant D_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant E_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant F_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant G_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant H_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant I_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant J_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant K_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant L_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000111";
+        constant M_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant N_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := zero_7_seg;
+        constant P_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant Q_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant S_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant T_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant U_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant V_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000001";
+        constant W_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant X_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant Y_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant Z_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        
+        constant number_0 : integer := 0;
+        constant number_1 : integer := 1;
+        constant number_2 : integer := 2;
+        constant number_3 : integer := 3;
+        constant number_4 : integer := 4;
+        constant number_5 : integer := 5;
+        constant number_6 : integer := 6;
+        constant number_7 : integer := 7;
+        constant number_8 : integer := 8;
+        constant number_9 : integer := 9;
+        constant letter_A : integer := 10;
+        constant letter_B : integer := 11;
+        constant letter_C : integer := 12;
+        constant letter_D : integer := 13;
+        constant letter_E : integer := 14;
+        constant letter_F : integer := 15;
+        constant letter_G : integer := 16;
+        constant letter_H : integer := 17;
+        constant letter_I : integer := 18;
+        constant letter_J : integer := 19;
+        constant letter_K : integer := 20;
+        constant letter_L : integer := 21;
+        constant letter_M : integer := 22;
+        constant letter_N : integer := 23;
+        constant letter_O : integer := 24;
+        constant letter_P : integer := 25;
+        constant letter_Q : integer := 26;
+        constant letter_R : integer := 27;
+        constant letter_S : integer := 28;
+        constant letter_T : integer := 29;
+        constant letter_U : integer := 30;
+        constant letter_V : integer := 31;
+        constant letter_W : integer := 32;
+        constant letter_X : integer := 33;
+        constant letter_Y : integer := 34;
+        constant letter_Z : integer := 35;  
     
     -- Filter coefs:
         -- High pass
