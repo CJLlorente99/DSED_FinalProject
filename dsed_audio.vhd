@@ -140,6 +140,8 @@ architecture Behavioral of dsed_audio is
                    reset : in STD_LOGIC;
                    volume_info : in STD_LOGIC_VECTOR (6 downto 0);
                    level : in STD_LOGIC_VECTOR (4 downto 0);
+                   secs_left : in STD_LOGIC_VECTOR (4 downto 0);
+                   secs_played : in STD_LOGIC_VECTOR (4 downto 0);
                    an : out STD_LOGIC_VECTOR (7 downto 0);
                    seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
         end component;
@@ -156,6 +158,24 @@ architecture Behavioral of dsed_audio is
                    delayed_sig : out STD_LOGIC_VECTOR(sample_size - 1 downto 0);
                    actual_level : out STD_LOGIC_VECTOR(4 downto 0)
             );
+        end component;
+        
+        -- Seconds remaining
+        
+        component sec_left is
+            Port ( clk : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   is_recording : in STD_LOGIC;
+                   sample_req : in STD_LOGIC;
+                   addr_now : in STD_LOGIC_VECTOR (18 downto 0);
+                   addr_max : in STD_LOGIC_VECTOR (18 downto 0);
+                   data_in : in STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                   data_out : out STD_LOGIC_VECTOR (sample_size-1 downto 0);
+                   play_en_in : in STD_LOGIC;
+                   play_en_out : out STD_LOGIC;
+                   to_seven_seg_recording : out STD_LOGIC_VECTOR (4 downto 0);
+                   to_seven_seg_playing : out STD_LOGIC_VECTOR (4 downto 0)
+               );
         end component;
 
     --FSM state type declaration
@@ -180,13 +200,18 @@ architecture Behavioral of dsed_audio is
         signal data_filter_ready : STD_LOGIC;
         
         -- Volume
-        signal from_volume_to_pwm : STD_LOGIC_VECTOR (sample_size-1 downto 0);
+        signal from_volume_to_sec : STD_LOGIC_VECTOR (sample_size-1 downto 0);
         signal from_volume_to_seven : STD_LOGIC_VECTOR (6 downto 0);
         
         -- Delay
         signal enable, original_sig_ready : STD_LOGIC := '0';
         signal original_sig, delayed_sig : STD_LOGIC_VECTOR(sample_size - 1 downto 0);
         signal level : STD_LOGIC_VECTOR(4 downto 0);
+        
+        -- Secs
+        signal from_secs_left_to_pwm : STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+        signal recorded_secs, played_secs : STD_LOGIC_VECTOR (4 downto 0);
+        signal play_en_to_audio, is_recording : STD_LOGIC;
         
         -- Extra signals
         signal signal_speaker : STD_LOGIC_VECTOR (sample_size -1 downto 0);
@@ -217,8 +242,8 @@ begin
                    micro_clk => micro_clk, 
                    micro_data => micro_data, 
                    micro_LR => micro_LR, 
-                   play_enable => play_en,
-                   sample_in => from_volume_to_pwm,
+                   play_enable => play_en_to_audio,
+                   sample_in => from_secs_left_to_pwm,
                    sample_request => sample_request,
                    jack_sd => jack_sd,
                    jack_pwm => jack_pwm,
@@ -253,7 +278,7 @@ begin
                    level_up => volume_up,
                    level_down => volume_down,
                    sample_in => delayed_sig,
-                   sample_out => from_volume_to_pwm,
+                   sample_out => from_volume_to_sec,
                    to_seven_seg => from_volume_to_seven
                 );
                 
@@ -263,6 +288,8 @@ begin
                    reset => reset,
                    volume_info => from_volume_to_seven,
                    level => level,
+                   secs_left => recorded_secs,
+                   secs_played => played_secs,
                    an => an,
                    seven_seg => seven_seg
                );
@@ -277,6 +304,22 @@ begin
                  original_sig_ready => sample_request,
                  delayed_sig => delayed_sig,
                  actual_level => level
+              );
+              
+      --sec_left instantiation              
+      SECS_LEFT : sec_left
+        port map( clk => clk_12Mhz,
+                  reset => reset,
+                  is_recording => is_recording,
+                  sample_req => sample_request,
+                  addr_now => std_logic_vector(act_address),
+                  addr_max => std_logic_vector(final_address),
+                  data_in => from_volume_to_sec,
+                  data_out => from_secs_left_to_pwm,
+                  play_en_in => play_en,
+                  play_en_out => play_en_to_audio,
+                  to_seven_seg_recording => recorded_secs,
+                  to_seven_seg_playing => played_secs
               );
                
    ena <= '1';
@@ -311,6 +354,7 @@ begin
             next_act_address <= act_address;
             wea <= "0";
             next_filter_in_enable <= '0';
+            is_recording <= '0';
             
             
         -- Case structure for state and transition logic
@@ -351,6 +395,7 @@ begin
             -- Mic sample out is directly connected to ram
             when record_sampling =>
                 record_en <= '1';
+                is_recording <= '1'; -- indicates secs_left we are in a recording state
                 if rec_ready = '1' then
                     next_state <= record_save;
                 else
@@ -359,9 +404,12 @@ begin
             
             -- Record save activates write enable and increments by one last address written
             when record_save =>
-                wea <= "1";
-                next_final_address <= final_address + 1;
-                next_act_address <= act_address + 1;
+                is_recording <= '1'; -- indicates secs_left we are in a recording state
+                if final_address < MAX_ADDRESS then
+                    wea <= "1";
+                    next_final_address <= final_address + 1;
+                    next_act_address <= act_address + 1;
+                end if;
                 
                 ---------------------------------------------
                 --               CAJA VERDE:               --

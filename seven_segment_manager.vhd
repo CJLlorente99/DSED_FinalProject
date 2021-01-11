@@ -30,8 +30,11 @@ entity seven_segment_manager is
            reset : in STD_LOGIC;
            volume_info : in STD_LOGIC_VECTOR (6 downto 0); -- info about volume level
            level : in STD_LOGIC_VECTOR (4 downto 0); -- info about current delay level
+           secs_left : in STD_LOGIC_VECTOR (4 downto 0);
+           secs_played : in STD_LOGIC_VECTOR (4 downto 0);
            an : out STD_LOGIC_VECTOR (7 downto 0);
-           seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
+           seven_seg : out STD_LOGIC_VECTOR (6 downto 0)
+       );
 end seven_segment_manager;
 
 architecture Behavioral of seven_segment_manager is       
@@ -42,19 +45,71 @@ architecture Behavioral of seven_segment_manager is
         -- Register
         signal count, next_count, rotating_count, next_rotating_count : UNSIGNED (13 downto 0); -- CAREFULL, SHOULD BE CHANGED ACCORDING TO refresh_rate/rotating_rate constant
         signal iterator, next_iterator : UNSIGNED (7 downto 0); -- signal rotated for output an assignation
-        signal digit_shown, next_digit_shown : UNSIGNED(4 downto 0); -- info's index displayed 
-        signal rotating_info, next_rotating_info : UNSIGNED(4 downto 0); -- in order to rotate info
-        signal act_info : SEVEN_SEG_INFO (21 downto 0); -- rotated info's version
+        signal digit_shown, next_digit_shown : UNSIGNED(5 downto 0); -- info's index displayed 
+        signal rotating_info, next_rotating_info : UNSIGNED(5 downto 0); -- in order to rotate info
+        signal act_info : SEVEN_SEG_INFO (info_length-1 downto 0); -- rotated info's version
         
         -- FSM state declaration
         signal state, next_state : state_type;
     
     -- Auxiliar signals
-        signal info : SEVEN_SEG_INFO (21 downto 0); 
+        signal info : SEVEN_SEG_INFO (info_length-1 downto 0); 
         signal info_to_be_shown : UNSIGNED (6 downto 0); -- 7 segment shown
 
 begin
     -- info association
+--        info(70) <= (others => '1');
+--        info(69) <= to_unsigned(letter_S, 7);
+--        info(68) <= to_unsigned(letter_E, 7);
+--        info(67) <= to_unsigned(letter_C, 7);
+--        info(66) <= to_unsigned(letter_S, 7);
+--        info(65) <= (others => '1');
+--        info(64) <= to_unsigned(letter_L, 7);
+--        info(63) <= to_unsigned(letter_E, 7);
+--        info(62) <= to_unsigned(letter_F, 7);
+--        info(61) <= to_unsigned(letter_T, 7);
+--        info(60) <= (others => '1');
+--        info(59) <= to_unsigned(letter_T, 7);
+--        info(58) <= to_unsigned(letter_O, 7);
+--        info(57) <= (others => '1');
+--        info(56) <= to_unsigned(letter_B, 7);
+--        info(55) <= to_unsigned(letter_E, 7);
+--        info(54) <= (others => '1');
+--        info(53) <= to_unsigned(letter_P, 7);
+--        info(52) <= to_unsigned(letter_L, 7);
+--        info(51) <= to_unsigned(letter_A, 7);
+--        info(50) <= to_unsigned(letter_Y, 7);
+--        info(49) <= to_unsigned(letter_E, 7);
+--        info(48) <= to_unsigned(letter_D, 7);
+--        info(47) <= (others => '1');
+--        info(46) <= "000" & unsigned(secs_played)/10;
+--        info(45) <= "000" & unsigned(secs_played) mod 10;
+--        info(44) <= (others => '1');
+--        info(43) <= to_unsigned(symbol_barras, 7);
+    
+        info(43) <= (others => '1');
+        info(42) <= to_unsigned(letter_S, 7);
+        info(41) <= to_unsigned(letter_E, 7);
+        info(40) <= to_unsigned(letter_C, 7);
+        info(39) <= to_unsigned(letter_S, 7);
+        info(38) <= (others => '1');
+        info(37) <= to_unsigned(letter_L, 7);
+        info(36) <= to_unsigned(letter_E, 7);
+        info(35) <= to_unsigned(letter_F, 7);
+        info(34) <= to_unsigned(letter_T, 7);
+        info(33) <= (others => '1');
+        info(32) <= to_unsigned(letter_I, 7);
+        info(31) <= to_unsigned(letter_N, 7);
+        info(30) <= (others => '1');
+        info(29) <= to_unsigned(letter_R, 7);
+        info(28) <= to_unsigned(letter_A, 7);
+        info(27) <= to_unsigned(letter_M, 7);
+        info(26) <= (others => '1');
+        info(25) <= "000" & unsigned(secs_left)/10;
+        info(24) <= "000" & unsigned(secs_left) mod 10;
+        info(23) <= (others => '1');
+        info(22) <= to_unsigned(symbol_barras, 7);
+        
         info(21) <= (others => '1');
         info(20) <= to_unsigned(letter_E, 7);
         info(19) <= to_unsigned(letter_C, 7);
@@ -100,7 +155,7 @@ begin
         end process;
         
     -- FSMD
-        process (count, state, digit_shown, iterator, rotating_count)
+        process (count, state, digit_shown, iterator, rotating_count, rotating_info)
         begin
             -- Default treatment
                 next_iterator <= iterator;
@@ -136,7 +191,7 @@ begin
                             if rotating_count < rotation_rate then -- rotation rate in order to show info at a sufficient pace
                                 next_rotating_count <= rotating_count + 1;
                             else -- when sufficient time has been reached, rotate and show more info
-                                if rotating_info = 20 then
+                                if rotating_info = info'length-1 then
                                     next_rotating_info <= (others => '0');
                                 else
                                     next_rotating_info <= rotating_info + 1;
@@ -175,7 +230,39 @@ begin
                         info(info'length-18 downto 0) & info(info'length-1 downto info'length-17) when rotating_info=17 else
                         info(info'length-19 downto 0) & info(info'length-1 downto info'length-18) when rotating_info=18 else
                         info(info'length-20 downto 0) & info(info'length-1 downto info'length-19) when rotating_info=19 else
-                        info(info'length-21 downto 0) & info(info'length-1 downto info'length-20) when rotating_info=20 else                                                                                                  
+                        info(info'length-21 downto 0) & info(info'length-1 downto info'length-20) when rotating_info=20 else
+                        info(info'length-22 downto 0) & info(info'length-1 downto info'length-21) when rotating_info=21 else
+                        info(info'length-23 downto 0) & info(info'length-1 downto info'length-22) when rotating_info=22 else
+                        info(info'length-24 downto 0) & info(info'length-1 downto info'length-23) when rotating_info=23 else                                                                                                  
+                        info(info'length-25 downto 0) & info(info'length-1 downto info'length-24) when rotating_info=24 else
+                        info(info'length-26 downto 0) & info(info'length-1 downto info'length-25) when rotating_info=25 else
+                        info(info'length-27 downto 0) & info(info'length-1 downto info'length-26) when rotating_info=26 else
+                        info(info'length-28 downto 0) & info(info'length-1 downto info'length-27) when rotating_info=27 else
+                        info(info'length-29 downto 0) & info(info'length-1 downto info'length-28) when rotating_info=28 else
+                        info(info'length-30 downto 0) & info(info'length-1 downto info'length-29) when rotating_info=29 else
+                        info(info'length-31 downto 0) & info(info'length-1 downto info'length-30) when rotating_info=30 else
+                        info(info'length-32 downto 0) & info(info'length-1 downto info'length-31) when rotating_info=31 else
+                        info(info'length-33 downto 0) & info(info'length-1 downto info'length-32) when rotating_info=32 else
+                        info(info'length-34 downto 0) & info(info'length-1 downto info'length-33) when rotating_info=33 else
+                        info(info'length-35 downto 0) & info(info'length-1 downto info'length-34) when rotating_info=34 else                                                                                                  
+                        info(info'length-36 downto 0) & info(info'length-1 downto info'length-35) when rotating_info=35 else
+                        info(info'length-37 downto 0) & info(info'length-1 downto info'length-36) when rotating_info=36 else
+                        info(info'length-38 downto 0) & info(info'length-1 downto info'length-37) when rotating_info=37 else
+                        info(info'length-39 downto 0) & info(info'length-1 downto info'length-38) when rotating_info=38 else
+                        info(info'length-40 downto 0) & info(info'length-1 downto info'length-39) when rotating_info=39 else
+                        info(info'length-41 downto 0) & info(info'length-1 downto info'length-40) when rotating_info=40 else
+                        info(info'length-42 downto 0) & info(info'length-1 downto info'length-41) when rotating_info=41 else
+                        info(info'length-43 downto 0) & info(info'length-1 downto info'length-42) when rotating_info=42 else
+                        info(info'length-44 downto 0) & info(info'length-1 downto info'length-43) when rotating_info=43 else
+--                        info(info'length-45 downto 0) & info(info'length-1 downto info'length-44) when rotating_info=44 else
+--                        info(info'length-46 downto 0) & info(info'length-1 downto info'length-45) when rotating_info=45 else                                                                                                  
+--                        info(info'length-47 downto 0) & info(info'length-1 downto info'length-46) when rotating_info=46 else
+--                        info(info'length-48 downto 0) & info(info'length-1 downto info'length-47) when rotating_info=47 else
+--                        info(info'length-49 downto 0) & info(info'length-1 downto info'length-48) when rotating_info=48 else
+--                        info(info'length-50 downto 0) & info(info'length-1 downto info'length-49) when rotating_info=49 else
+--                        info(info'length-51 downto 0) & info(info'length-1 downto info'length-50) when rotating_info=50 else
+--                        info(info'length-52 downto 0) & info(info'length-1 downto info'length-51) when rotating_info=51 else
+--                        info(info'length-53 downto 0) & info(info'length-1 downto info'length-52) when rotating_info=52 else
                         info;
             
             -- actual element in the array info to be shown

@@ -26,6 +26,9 @@ package package_dsed is
     
         constant sample_size : integer := 8;
         constant factor_size : integer := 11;
+        
+    -- Sampling rate
+        constant sampling_rate : UNSIGNED(21 downto 0) := "0000000000000001101001"; -- format (1.21)
     
     -- 7 segments refresh rate
         constant refresh_rate : integer := 12000;
@@ -33,6 +36,9 @@ package package_dsed is
     
     -- type definition for 7 seg purposes  
         type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
+        
+    -- info length
+        constant info_length : integer := 44;
     
     -- 7 segments useful constant
         constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";
@@ -59,14 +65,14 @@ package package_dsed is
         constant J_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1100001";
         constant K_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         constant L_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000111";
-        constant M_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        constant M_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101011";
         constant N_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101011";
         constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100011";
         constant P_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001100";
         constant Q_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0011000";
-        constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001000";
+        constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101111";
         constant S_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0010010";
-        constant T_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101111";
+        constant T_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1001110";
         constant U_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1100011";
         constant V_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000001";
         constant W_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
@@ -153,6 +159,9 @@ package package_dsed is
         constant volume18 : unsigned(factor_size-1 downto 0) := "01010101111";
         constant volume19 : unsigned(factor_size-1 downto 0) := "01101000111";
         constant volume20 : unsigned(factor_size-1 downto 0) := "10000000000";
+        
+    -- Max address possible in RAM
+        constant MAX_ADDRESS : UNSIGNED(18 downto 0) := (others => '1');
         
 end package_dsed;
         
