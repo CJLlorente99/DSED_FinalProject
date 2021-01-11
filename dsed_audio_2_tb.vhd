@@ -41,9 +41,9 @@ component dsed_audio is
         Port ( clk_100Mhz : in STD_LOGIC;
                reset : in STD_LOGIC;
                -- Control ports
-               BTNL : in STD_LOGIC; -- Record
-               BTNC : in STD_LOGIC; -- Reset ram
-               BTNR : in STD_LOGIC; -- Sound on
+               recording : in STD_LOGIC; -- Record
+               clearing : in STD_LOGIC; -- Reset ram
+               playing : in STD_LOGIC; -- Sound on
                SW0 : in STD_LOGIC; 
                SW1 : in STD_LOGIC;
                -- To/From the microphone
@@ -64,7 +64,7 @@ component dsed_audio is
     end component;
     
     -- Inputs
-    signal clk_100Mhz, reset, BTNL, BTNC, BTNR, SW0, SW1, micro_data, volume_up, volume_down : STD_LOGIC := '0';
+    signal clk_100Mhz, reset, recording, clearing, playing, SW0, SW1, micro_data, volume_up, volume_down : STD_LOGIC := '0';
     
     -- Outputs
     signal micro_clk, micro_LR, jack_sd, jack_pwm : STD_LOGIC := '0';
@@ -83,9 +83,9 @@ begin
         clk_100Mhz => clk_100Mhz,
         reset => reset,
         -- Control ports
-        BTNL => BTNL, -- Record
-        BTNC => BTNC, -- Reset ram
-        BTNR => BTNR, -- Sound on
+        recording => recording, -- Record
+        clearing => clearing, -- Reset ram
+        playing => playing, -- Sound on
         SW0 => SW0, 
         SW1 => SW1,
         -- To/From the microphone
@@ -122,11 +122,11 @@ begin
     c <= not c after 370 ns;
     micro_data <= a xor b xor c;
     
-    BTNL <= '1',
+    recording <= '1',
             '0' after 2us;
             
     -- Sound on and try all functionalities
-    BTNR <= '0',
+    playing <= '0',
             '1' after 2us;
             
     SW0 <= '0';

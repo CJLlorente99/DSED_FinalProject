@@ -1,19 +1,20 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Grupo 9
+-- Engineer: CJLL & ITI
 -- 
 -- Create Date: 05.01.2021 12:48:00
 -- Design Name: 
 -- Module Name: volume_control - Behavioral
--- Project Name: 
+-- Project Name: Sistema de grabación, tratamiento y reproducción de audio
 -- Target Devices: 
 -- Tool Versions: 
--- Description: 
+-- Description: This module regulates volume with variable levels as input
 -- 
 -- Dependencies: 
 -- 
 -- Revision:
 -- Revision 0.01 - File Created
+-- Revision 1.00 - File finished
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------

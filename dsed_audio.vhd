@@ -23,24 +23,16 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use work.package_dsed.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity dsed_audio is
     Port (
          clk_100Mhz : in STD_LOGIC;
          reset : in STD_LOGIC;
          -- Control ports
-         BTNL : in STD_LOGIC; -- Record
-         BTNC : in STD_LOGIC; -- Reset ram
-         BTNR : in STD_LOGIC; -- Sound on
+         recording : in STD_LOGIC; -- Record
+         clearing : in STD_LOGIC; -- Reset ram
+         playing : in STD_LOGIC; -- Sound on
          SW0 : in STD_LOGIC; -- SW0 = '0' => (play forward or LPF), SW1= '1' => (play reverse or HPF)
          SW1 : in STD_LOGIC; -- SW1 = '0' => (play_reverse or play_forward), SW = '1' => filter (HPF or LPF)
          -- To/From the microphone
@@ -54,6 +46,9 @@ entity dsed_audio is
          -- Volume control
          volume_up : in STD_LOGIC;
          volume_down : in STD_LOGIC;
+         -- Delay control
+         increase : in STD_LOGIC;
+         decrease : in STD_LOGIC;
          -- Seven segments
          an : out STD_LOGIC_VECTOR (7 downto 0);
          seven_seg : out STD_LOGIC_VECTOR (6 downto 0)
@@ -144,10 +139,25 @@ architecture Behavioral of dsed_audio is
             Port ( clk : in STD_LOGIC;
                    reset : in STD_LOGIC;
                    volume_info : in STD_LOGIC_VECTOR (6 downto 0);
+                   level : in STD_LOGIC_VECTOR (4 downto 0);
                    an : out STD_LOGIC_VECTOR (7 downto 0);
                    seven_seg : out STD_LOGIC_VECTOR (6 downto 0));
         end component;
-    
+        
+        -- delay
+        
+        component delay is
+            Port ( clk : in STD_LOGIC;
+                   reset : in STD_LOGIC;
+                   increase : in STD_LOGIC;
+                   decrease : in STD_LOGIC;
+                   original_sig : in STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                   original_sig_ready : in STD_LOGIC;
+                   delayed_sig : out STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+                   actual_level : out STD_LOGIC_VECTOR(4 downto 0)
+            );
+        end component;
+
     --FSM state type declaration
     type state_type is (idle, filter1, filter2, record_sampling, record_save, reset_mem, play_forward, play_reverse);
     
@@ -172,6 +182,11 @@ architecture Behavioral of dsed_audio is
         -- Volume
         signal from_volume_to_pwm : STD_LOGIC_VECTOR (sample_size-1 downto 0);
         signal from_volume_to_seven : STD_LOGIC_VECTOR (6 downto 0);
+        
+        -- Delay
+        signal enable, original_sig_ready : STD_LOGIC := '0';
+        signal original_sig, delayed_sig : STD_LOGIC_VECTOR(sample_size - 1 downto 0);
+        signal level : STD_LOGIC_VECTOR(4 downto 0);
         
         -- Extra signals
         signal signal_speaker : STD_LOGIC_VECTOR (sample_size -1 downto 0);
@@ -237,20 +252,32 @@ begin
                    reset => reset,
                    level_up => volume_up,
                    level_down => volume_down,
-                   sample_in => signal_speaker,
+                   sample_in => delayed_sig,
                    sample_out => from_volume_to_pwm,
                    to_seven_seg => from_volume_to_seven
                 );
                 
-    -- seven segment manager instantation
-            
+    -- seven segment manager instantation        
     SEVEN_SEG_MANAGER : seven_segment_manager
         port map ( clk => clk_12Mhz,
                    reset => reset,
                    volume_info => from_volume_to_seven,
+                   level => level,
                    an => an,
                    seven_seg => seven_seg
                );
+    
+    -- delay instantiation           
+    DELAYING : delay 
+       port map( clk => clk_12Mhz,
+                 reset => reset,
+                 increase => increase,
+                 decrease => decrease,
+                 original_sig => signal_speaker,
+                 original_sig_ready => sample_request,
+                 delayed_sig => delayed_sig,
+                 actual_level => level
+              );
                
    ena <= '1';
                         
@@ -273,7 +300,7 @@ begin
             end process;
     
     -- FSMD states logic
-        process(state, BTNC, BTNL, BTNR, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready, final_address, act_address)
+        process(state, clearing, recording, playing, SW0, SW1, rec_ready, sample_request, data_ram, filter_select, data_filter, data_filter_ready, final_address, act_address)
         begin
         -- Default treatment
             play_en <= '0';
@@ -294,11 +321,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then      
+                if clearing = '1' then      
                     next_state <= reset_mem;
-                elsif BTNL = '1' then   
+                elsif recording = '1' then   
                     next_state <= record_sampling;
-                elsif BTNR = '1' then   
+                elsif playing = '1' then   
                     if SW1 = '0' and sample_request = '1' then
                         if SW0 = '0' then   
                             next_act_address <= (others => '0');
@@ -339,11 +366,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' and sample_request = '1' then
                         if SW0 = '0' then
                             next_act_address <= (others => '0');
@@ -374,11 +401,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' and sample_request = '1' then
                         if SW0 = '0' then
                             next_act_address <= (others => '0');
@@ -407,11 +434,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' then
                         if SW0 = '0' then
                             --------------------------------
@@ -449,11 +476,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' then
                         if SW0 = '1' then
                             --------------------------------
@@ -491,11 +518,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' and sample_request = '1' then
                         if SW0 = '0' then
                             next_act_address <= (others => '0');
@@ -533,11 +560,11 @@ begin
                 ---------------------------------------------
                 --               CAJA VERDE:               --
                 ---------------------------------------------
-                if BTNC = '1' then
+                if clearing = '1' then
                     next_state <= reset_mem;
-                elsif BTNL = '1' then
+                elsif recording = '1' then
                     next_state <= record_sampling;
-                elsif BTNR = '1' then
+                elsif playing = '1' then
                     if SW1 = '0' then
                         if SW0 = '1' then
                             next_state <= play_reverse;

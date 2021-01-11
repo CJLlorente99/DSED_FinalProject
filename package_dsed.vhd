@@ -1,19 +1,20 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Grupo 9
+-- Engineer: CJLL & ITI
 -- 
 -- Create Date: 09.11.2020 10:54:15
 -- Design Name: 
 -- Module Name: package_dsed
--- Project Name: 
+-- Project Name: Sistema de grabación, tratamiento y reproducción de audio
 -- Target Devices: 
 -- Tool Versions: 
--- Description: 
+-- Description: Package containing usefull constants
 -- 
 -- Dependencies: 
 -- 
 -- Revision:
 -- Revision 0.01 - File Created
+-- Revision 1.00 - File finished
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
@@ -28,13 +29,10 @@ package package_dsed is
     
     -- 7 segments refresh rate
         constant refresh_rate : integer := 12000;
-        constant rotation_rate : integer := 125;
+        constant rotation_rate : integer := 50;
     
     -- type definition for 7 seg purposes  
         type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
-    
-    -- Number of sources to be shown in 7 segment
-        constant num_info : natural := 2;
     
     -- 7 segments useful constant
         constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";
@@ -63,7 +61,7 @@ package package_dsed is
         constant L_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000111";
         constant M_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         constant N_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0101011";
-        constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := zero_7_seg;
+        constant O_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100011";
         constant P_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001100";
         constant Q_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0011000";
         constant R_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001000";
@@ -75,6 +73,9 @@ package package_dsed is
         constant X_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         constant Y_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0001101";
         constant Z_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0100100";
+        
+        constant barra_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1001001";
+        constant igual_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "0110111";
         
         constant number_0 : integer := 0;
         constant number_1 : integer := 1;
@@ -111,7 +112,10 @@ package package_dsed is
         constant letter_W : integer := 32;
         constant letter_X : integer := 33;
         constant letter_Y : integer := 34;
-        constant letter_Z : integer := 35;  
+        constant letter_Z : integer := 35;
+        
+        constant symbol_igual : integer := 36;
+        constant symbol_barras : integer := 37;  
     
     -- Filter coefs:
         -- High pass
