@@ -34,7 +34,7 @@ package package_dsed is
         type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
     
     -- Number of sources to be shown in 7 segment
-        constant num_info : natural := 1;
+        constant num_info : natural := 2;
     
     -- 7 segments useful constant
         constant zero_7_seg : STD_LOGIC_VECTOR (6 downto 0) := "1000000";
