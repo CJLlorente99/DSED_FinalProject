@@ -34,6 +34,10 @@ package package_dsed is
         constant refresh_rate : integer := 12000;
         constant rotation_rate : integer := 50;
     
+    -- delay needed constants
+        type regs is array (natural range <>) of STD_LOGIC_VECTOR(sample_size-1 downto 0);
+        constant MAX_DELAY : integer := 40; --max_delay/50us
+    
     -- type definition for 7 seg purposes  
         type seven_seg_info is array (natural range <>) of UNSIGNED(6 downto 0);
         
