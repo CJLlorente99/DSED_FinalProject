@@ -109,7 +109,6 @@ begin
             elsif rising_edge(clk) then
                 count <= next_count;
                 level <= next_level;
---                auxiliar_sig <= next_auxiliar_sig;
                 
                 -- Memory refreshing
                 if original_sig_ready = '1' then
@@ -193,6 +192,7 @@ begin
                       
                       
     -- Output logic
+        -- An auxiliar signal is used to check if the sum exceeds the maximum value that can be represented 
         auxiliar_sig <= std_logic_vector(unsigned('0' & original_sig) + ("000" & (unsigned(additive(sample_size - 1 downto 2)))));
                        
         delayed_sig <= auxiliar_sig(sample_size - 1 downto 0) when auxiliar_sig(sample_size) = '0' else

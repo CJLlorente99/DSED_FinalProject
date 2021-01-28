@@ -68,7 +68,7 @@ architecture Behavioral of fir_filter is
 
 begin
     -- Module instantiation
-        U0 : fir_data_path port map(
+        FILTERING_PROCESS : fir_data_path port map(
             clk => clk,
             reset => reset,
             clear => clear_aux,
@@ -79,7 +79,7 @@ begin
             s => sample_out
         );
         
-        U1 : controlador_fir port map(
+        CONTROLADOR : controlador_fir port map(
             clk => clk,
             reset => reset,
             clear => clear_aux,
